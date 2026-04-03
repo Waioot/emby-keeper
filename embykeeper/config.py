@@ -283,6 +283,9 @@ class ConfigManager(ProxyBase):
         a.add(comment("启用定时抢注功能, 默认禁用, 设置为 true 以启用:"))
         a["registrar"] = False
         a.add(nl())
+        a.add(comment("跳过该账号的远程鉴权, 默认 false, 仅在您明确需要时启用:"))
+        a["skip_remote_auth"] = False
+        a.add(nl())
         doc["telegram"] = c
         doc.add(comment("针对该账号的独特设置, 如需使用请将该段取消注释并修改. 详见 site 项和 checkiner 项."))
         a_specific = item(
@@ -317,6 +320,7 @@ class ConfigManager(ProxyBase):
                             "monitor": False,
                             "messager": False,
                             "registrar": False,
+                            "skip_remote_auth": False,
                         }
                     ]
                 }

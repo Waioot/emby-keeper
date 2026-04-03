@@ -198,6 +198,7 @@ class TelegramAccount(ConfigModel):
     api_hash: Optional[str] = None
     session: Optional[str] = None
     enabled: Optional[bool] = True
+    skip_remote_auth: Optional[bool] = False
 
     # 账号单独配置
     site: Optional[SiteConfig] = None

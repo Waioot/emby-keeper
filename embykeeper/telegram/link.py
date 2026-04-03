@@ -13,6 +13,7 @@ from pyrogram.types import Message
 from pyrogram.errors.exceptions.bad_request_400 import YouBlockedUser
 from pyrogram.errors import FloodWait
 
+from embykeeper.config import config
 from embykeeper.utils import async_partial, truncate_str
 
 from .lock import super_ad_shown, super_ad_shown_lock, authed_services, authed_services_lock
@@ -39,6 +40,14 @@ class Link:
         rd = random.Random()
         rd.seed(uuid.getnode())
         return uuid.UUID(int=rd.getrandbits(128))
+
+    def _should_skip_remote_auth(self) -> bool:
+        phone = (self.client.phone_number or "").replace(" ", "")
+        accounts = (config.telegram.account or []) if config.telegram else []
+        for account in accounts:
+            if (account.phone or "").replace(" ", "") == phone:
+                return bool(getattr(account, "skip_remote_auth", False))
+        return False
 
     async def delete_messages(self, messages: List[Message]):
         """删除一系列消息."""
@@ -227,6 +236,11 @@ class Link:
     async def auth(self, service: str, log_func=None):
         """向机器人发送授权请求."""
         async with authed_services_lock:
+            if self._should_skip_remote_auth():
+                self.log.debug(f"[gray50]账号配置启用 skip_remote_auth, 跳过 {service.upper()} 远程鉴权.[/]")
+                authed_services.setdefault(self.client.me.id, {})[service] = True
+                return True
+
             user_auth_cache = authed_services.get(self.client.me.id, {}).get(service, None)
             if user_auth_cache is not None:
                 return user_auth_cache
