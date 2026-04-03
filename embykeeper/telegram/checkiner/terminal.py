@@ -142,7 +142,8 @@ def call_qwen3_5_plus(
 
 class TerminalCheckin(AnswerBotCheckin):
     name = "终点站 AI"
-    bot_username = "EmbyPublicBot"
+    # bot_username = "EmbyPublicBot"
+    bot_username = "my_annunciator_boards_bot"
     bot_checkin_cmd = ["/checkin"]
     bot_text_ignore = ["会话已取消", "没有活跃的会话"]
     bot_checked_keywords = ["今天已签到"]
