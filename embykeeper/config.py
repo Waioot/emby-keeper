@@ -257,6 +257,15 @@ class ConfigManager(ProxyBase):
         c.add(nl())
         c.add(comment("每隔几天进行签到:"))
         c["interval_days"] = 1
+        c.add(nl())
+        c.add(comment("智能签到器使用的 AI 服务地址:"))
+        c["ai_base_url"] = default_config.checkiner.ai_base_url
+        c.add(nl())
+        c.add(comment("智能签到器使用的 AI 模型名:"))
+        c["ai_model"] = default_config.checkiner.ai_model
+        c.add(nl())
+        c.add(comment("智能签到器使用的 AI API Key:"))
+        c["ai_api_key"] = default_config.checkiner.ai_api_key
         doc["checkiner"] = c
         c.add(nl())
 

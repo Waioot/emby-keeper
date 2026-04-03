@@ -44,6 +44,8 @@ async def check_captcha(client: Client, callback_query: CallbackQuery):
 
     del user_states[user_id]
 
+    await client.send_message(callback_query.from_user.id, "🎉 签到成功，获得了 5 积分")
+
 
 async def send_captcha(client: Client, message: Message):
     user_id = str(message.from_user.id)

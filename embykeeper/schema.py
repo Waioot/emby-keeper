@@ -199,6 +199,9 @@ class TelegramAccount(ConfigModel):
     session: Optional[str] = None
     enabled: Optional[bool] = True
     skip_remote_auth: Optional[bool] = False
+    ai_base_url: Optional[str] = None
+    ai_model: Optional[str] = None
+    ai_api_key: Optional[str] = None
 
     # 账号单独配置
     site: Optional[SiteConfig] = None
@@ -213,8 +216,13 @@ class TelegramAccount(ConfigModel):
         return f"{self.phone}/{hash_value}"
 
     @staticmethod
-    def get_phone_masked(phone: str):
+    def get_phone_masked(phone: Optional[str]):
+        if phone is None:
+            return "unknown"
+        phone = str(phone)
         phone_len = len(phone)
+        if phone_len == 0:
+            return "unknown"
         visible_part = max(1, phone_len // 3)
         return phone[:visible_part] + "*" * (phone_len - visible_part * 2) + phone[-visible_part:]
 
