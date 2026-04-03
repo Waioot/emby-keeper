@@ -1,6 +1,7 @@
 import logging
 import os
 from pathlib import Path
+import shlex
 import sys
 from typing import List, Optional
 from functools import wraps
@@ -353,6 +354,7 @@ async def main(
     msg = " 您可以通过 Ctrl+C 以结束运行." if not public else ""
     logger.info(f"欢迎使用 [orange3]{__product__.capitalize()}[/]! 正在启动, 请稍等.{msg}")
     logger.info(f"当前版本 ({__version__}) 项目页: {__url__}")
+    logger.info(f"启动命令: {' '.join(shlex.quote(arg) for arg in sys.argv)}")
     logger.debug(f'命令行参数: "{" ".join(sys.argv[1:])}".')
 
     basedir = Path(basedir or user_data_dir(__product__))

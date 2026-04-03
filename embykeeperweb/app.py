@@ -365,6 +365,14 @@ def run(
     port: int = typer.Option(1818, envvar="PORT", show_envvar=False),
     host: str = "0.0.0.0",
     debug: bool = False,
+    instant: bool = typer.Option(
+        False,
+        "--instant/--no-instant",
+        "-i/-I",
+        envvar="EK_INSTANT",
+        show_envvar=False,
+        help="启动时立刻执行一次任务",
+    ),
     wait: bool = False,
     prefix: str = typer.Option("", envvar="EK_BASE_PREFIX", help="Base URL prefix (e.g. /ek)"),
 ):
@@ -379,7 +387,7 @@ def run(
         ek_config.set(Config())
         ek_config.mongodb = app.config["mongodb"]
     if not wait:
-        start_proc(instant=True)
+        start_proc(instant=instant)
     logger.info(f"Embykeeper webserver started at {host}:{port} with prefix {prefix or '/'}")
     socketio.run(app, port=port, host=host, debug=debug)
 
