@@ -1,6 +1,7 @@
 import asyncio
 import base64
 import json
+import time
 import urllib.error
 import urllib.request
 
@@ -53,6 +54,7 @@ def call_qwen3_5_plus(
     base_url: str,
     model: str,
     api_key: str,
+    log=None,
     image_mime: str = "image/jpeg",
     timeout: float = 120.0,
 ) -> str:
@@ -76,26 +78,63 @@ def call_qwen3_5_plus(
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
     }
+    payload_json = json.dumps(payload, ensure_ascii=False)
+
+    if log:
+        masked_api_key = f"{api_key[:6]}...{api_key[-4:]}" if len(api_key) > 10 else "***"
+        log.debug(
+            "call_qwen3_5_plus request meta: "
+            f"url={url}, model={model}, image_mime={image_mime}, timeout={timeout}, "
+            f"prompt_len={len(prompt)}, image_base64_len={len(image_base64)}, data_url_len={len(data_url)}"
+        )
+        log.debug(
+            "call_qwen3_5_plus request headers: "
+            f"Authorization=Bearer {masked_api_key}, Content-Type={headers['Content-Type']}"
+        )
+        log.debug(f"call_qwen3_5_plus request payload: {payload_json}")
 
     request = urllib.request.Request(
         url=url,
-        data=json.dumps(payload).encode("utf-8"),
+        data=payload_json.encode("utf-8"),
         headers=headers,
         method="POST",
     )
 
     try:
+        started_at = time.perf_counter()
         with urllib.request.urlopen(request, timeout=timeout) as response:
+            elapsed_ms = (time.perf_counter() - started_at) * 1000
+            status = getattr(response, "status", response.getcode())
+            response_headers = dict(response.headers.items())
             raw = response.read().decode("utf-8")
+            if log:
+                log.debug(
+                    f"call_qwen3_5_plus response meta: status={status}, "
+                    f"elapsed_ms={elapsed_ms:.2f}, headers={response_headers}"
+                )
+                log.debug(f"call_qwen3_5_plus response raw: {raw}")
             data = json.loads(raw)
+            if log:
+                log.debug(f"call_qwen3_5_plus response parsed: {json.dumps(data, ensure_ascii=False)}")
     except urllib.error.HTTPError as exc:
         body = exc.read().decode("utf-8", errors="replace")
+        if log:
+            log.warning(
+                f"call_qwen3_5_plus HTTPError: code={exc.code}, reason={exc.reason}, "
+                f"url={url}, body={body}"
+            )
         raise RuntimeError(f"HTTP error {exc.code}: {body}") from exc
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
+        if log:
+            log.warning(f"call_qwen3_5_plus request failed: {exc.__class__.__name__}: {exc}")
         raise RuntimeError(f"Request failed: {exc}") from exc
 
     text = extract_text_from_response(data).strip()
+    if log:
+        log.debug(f"call_qwen3_5_plus extracted text: {text}")
     if not text:
+        if log:
+            log.debug("call_qwen3_5_plus extracted text is empty, returning full parsed response JSON.")
         return json.dumps(data, ensure_ascii=False, indent=2)
 
     return text
@@ -130,6 +169,8 @@ class TerminalCheckin(AnswerBotCheckin):
 
     async def on_photo(self, message: Message):
         """分析传入的验证码图片并点击匹配选项."""
+        self.log.debug(f"{message.date} 收到验证码图片")
+
         if not message.reply_markup:
             return
 
@@ -164,6 +205,7 @@ class TerminalCheckin(AnswerBotCheckin):
                     base_url=self._get_qwen_base_url(),
                     model=self._get_qwen_model(),
                     api_key=self._get_qwen_api_key(),
+                    log=self.log,
                 )
             ).strip()
             self.log.info(f"AI 解析答案: {result}.")
