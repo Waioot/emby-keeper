@@ -1,4 +1,4 @@
-from typing import List, Optional, Union, Dict, Any, ClassVar
+from typing import List, Optional, Union, Dict, Any
 from pydantic import BaseModel, Field, model_validator, ValidationError
 from pydantic.networks import HttpUrl
 
@@ -60,6 +60,26 @@ class ProxyConfig(ConfigModel):
     password: Optional[str] = None
 
 
+class LLMProfileConfig(ConfigModel):
+    base_url: Optional[str] = None
+    model: Optional[str] = None
+    api_key: Optional[str] = None
+    prompt: Optional[str] = None
+    timeout: Optional[float] = 60.0
+    retries: Optional[int] = 3
+    temperature: Optional[float] = None
+    image_detail: Optional[str] = "high"
+
+
+class LLMConfig(ConfigModel):
+    default: Optional[LLMProfileConfig] = LLMProfileConfig()
+    ocr: Optional[LLMProfileConfig] = LLMProfileConfig()
+    vision: Optional[LLMProfileConfig] = LLMProfileConfig()
+    reasoning: Optional[LLMProfileConfig] = LLMProfileConfig()
+
+    model_config = {"extra": "allow"}
+
+
 class CheckinerConfig(ConfigModel):
     time_range: Optional[UseStr] = DEFAULT_TIME_RANGE
     interval_days: Optional[UseStr] = "1"
@@ -69,6 +89,25 @@ class CheckinerConfig(ConfigModel):
     random_start: Optional[int] = 60
 
     model_config = {"extra": "allow"}
+
+    @model_validator(mode="before")
+    @classmethod
+    def reject_removed_fields(cls, values):
+        if not isinstance(values, dict):
+            return values
+        removed = [
+            "ai_base_url",
+            "ai_model",
+            "ai_api_key",
+            "ocr_ai_base_url",
+            "ocr_ai_model",
+            "ocr_ai_api_key",
+            "ocr_ai_prompt",
+        ]
+        used = [key for key in removed if key in values]
+        if used:
+            raise ValueError(f"以下配置项已移除，请改用 llm.*：{', '.join(used)}")
+        return values
 
     def get_site_config(self, site: str) -> Dict[str, Any]:
         return getattr(self, site, {})
@@ -97,13 +136,29 @@ class RegistrarConfig(ConfigModel):
         return getattr(self, site, {})
 
 
+class NotifierTelegramBotConfig(ConfigModel):
+    bot_token: Optional[str] = None
+    chat_id: Optional[Union[int, str]] = None
+
+
 class NotifierConfig(ConfigModel):
     enabled: Optional[bool] = False
-    account: Optional[Union[int, str]] = 1
     immediately: Optional[bool] = False
     once: Optional[bool] = False
-    method: Optional[str] = "telegram"
+    method: Optional[str] = "telegram_bot"
     apprise_uri: Optional[str] = None
+    telegram_bot: Optional[NotifierTelegramBotConfig] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def reject_removed_fields(cls, values):
+        if not isinstance(values, dict):
+            return values
+        if values.get("method") == "telegram":
+            raise ValueError('`notifier.method = "telegram"` 已移除，请改用 `"telegram_bot"`')
+        if "account" in values:
+            raise ValueError("`notifier.account` 已移除，请改用 notifier.telegram_bot.chat_id")
+        return values
 
 
 class SiteConfig(ConfigModel):
@@ -142,14 +197,6 @@ class EmbyAccount(ConfigModel):
     interval_days: Optional[Union[int, str]] = None
     time_range: Optional[str] = None
 
-    # 向后兼容字段
-    interval: Optional[Union[int, str]] = None
-    watchtime: Optional[str] = None
-    hide: Optional[bool] = None
-    ua: Optional[str] = None
-    jellyfin: Optional[bool] = None
-    continuous: Optional[bool] = False
-
 
 class EmbyConfig(MediaServerBaseConfig):
     account: Optional[List[EmbyAccount]] = []
@@ -170,10 +217,6 @@ class SubsonicAccount(ConfigModel):
     # 站点单独配置
     interval_days: Optional[Union[int, str]] = None
     time_range: Optional[str] = None
-
-    # 向后兼容字段
-    ua: Optional[str] = None
-    version: Optional[str] = None
 
 
 class SubsonicConfig(MediaServerBaseConfig):
@@ -198,10 +241,6 @@ class TelegramAccount(ConfigModel):
     api_hash: Optional[str] = None
     session: Optional[str] = None
     enabled: Optional[bool] = True
-    skip_remote_auth: Optional[bool] = False
-    ai_base_url: Optional[str] = None
-    ai_model: Optional[str] = None
-    ai_api_key: Optional[str] = None
 
     # 账号单独配置
     site: Optional[SiteConfig] = None
@@ -234,30 +273,17 @@ class TelegramConfig(ConfigModel):
 
 class BotConfig(ConfigModel):
     token: str
+    chat_id: Optional[Union[int, str]] = None
 
 
 class Config(ConfigModel):
-    alias_map: ClassVar[Dict[str, str]] = {
-        "emby.time_range": "watchtime",
-        "emby.concurrency": "watch_concurrent",
-        "subsonic.time_range": "listentime",
-        "subsonic.concurrency": "listen_concurrent",
-        "checkiner.time_range": "time",
-        "checkiner.timeout": "timeout",
-        "checkiner.retries": "retries",
-        "checkiner.concurrency": "concurrent",
-        "checkiner.random_start": "random",
-        "emby.interval_days": "interval",
-        "subsonic.interval_days": "interval",
-        "site": "service",
-    }
-
     mongodb: Optional[str] = None
     basedir: Optional[str] = None
     nofail: Optional[bool] = True
     noexit: Optional[bool] = False
     debug_cron: Optional[bool] = False
     proxy: Optional[ProxyConfig] = None
+    llm: Optional[LLMConfig] = LLMConfig()
     emby: Optional[EmbyConfig] = EmbyConfig()
     subsonic: Optional[SubsonicConfig] = SubsonicConfig()
     checkiner: Optional[CheckinerConfig] = CheckinerConfig()
@@ -268,76 +294,8 @@ class Config(ConfigModel):
     notifier: Optional[NotifierConfig] = NotifierConfig()
     site: Optional[SiteConfig] = None
 
-    # 向后兼容字段
-    time: Optional[str] = None
-    watchtime: Optional[str] = None
-    listentime: Optional[str] = None
-    interval: Optional[Union[int, str]] = None
-    timeout: Optional[int] = None
-    retries: Optional[int] = None
-    concurrent: Optional[int] = None
-    watch_concurrent: Optional[int] = None
-    listen_concurrent: Optional[int] = None
-    random: Optional[int] = None
-    notify_immediately: Optional[bool] = None
-    service: Optional[SiteConfig] = None
-
     # 调试字段
     bot: Optional[BotConfig] = None
-
-    @model_validator(mode="before")
-    @classmethod
-    def handle_aliases(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        for service in ["emby", "subsonic", "telegram"]:
-            if service in values and isinstance(values[service], list):
-                if service == "telegram":
-                    # Convert telegram account fields
-                    for account in values[service]:
-                        if "send" in account:
-                            account["messager"] = account.pop("send")
-                        if "checkin" in account:
-                            account["checkiner"] = account.pop("checkin")
-                if service == "emby":
-                    # Convert emby account fields
-                    for account in values[service]:
-                        if "ua" in account:
-                            account["useragent"] = account.pop("ua")
-                if service == "subsonic":
-                    # Convert subsonic account fields
-                    for account in values[service]:
-                        if "ua" in account:
-                            account["useragent"] = account.pop("ua")
-                        if "version" in account:
-                            account["client_version"] = account.pop("version")
-                values[service] = {"account": values[service]}
-
-        if "notifier" in values:
-            notifier_value = values["notifier"]
-            if isinstance(notifier_value, str):
-                values["notifier"] = {
-                    "enabled": True,
-                    "account": notifier_value,
-                }
-            elif isinstance(notifier_value, bool):
-                values["notifier"] = {
-                    "enabled": notifier_value,
-                }
-            elif isinstance(notifier_value, int):
-                values["notifier"] = {
-                    "enabled": notifier_value > 0,
-                    "account": notifier_value,
-                }
-
-        for new_field, old_field in cls.alias_map.items():
-            if old_field in values and values[old_field] is not None:
-                parts = new_field.split(".")
-                target = values
-                for part in parts[:-1]:
-                    target.setdefault(part, {})
-                    target = target[part]
-                target[parts[-1]] = values[old_field]
-
-        return values
 
 
 def format_errors(e: ValidationError) -> str:
@@ -355,12 +313,6 @@ def format_errors(e: ValidationError) -> str:
         "Value is not a valid dict": "输入应为有效的字典格式",
     }
 
-    reverse_aliases = {}
-    for new_field, old_field in Config.alias_map.items():
-        if old_field not in reverse_aliases:
-            reverse_aliases[old_field] = []
-        reverse_aliases[old_field].append(new_field)
-
     error_groups = {}
     error_messages = ["配置文件错误, 请检查配置文件:"]
 
@@ -375,7 +327,6 @@ def format_errors(e: ValidationError) -> str:
             else:
                 msg = msg.replace(eng, chn)
 
-        # 如果是根级别的错误, 直接添加错误信息
         if not location:
             error_messages.append(f"  {msg}")
             continue
@@ -383,18 +334,7 @@ def format_errors(e: ValidationError) -> str:
         loc_str = " -> ".join(str(loc) for loc in location)
 
         error_key = (() if len(location) <= 1 else tuple(location[1:])) + (msg,)
-
-        # 检查是否有相关的别名字段
-        if location[0] in reverse_aliases:
-            for new_field in reverse_aliases[location[0]]:
-                new_loc = new_field.split(".")
-                if len(location) > 1:
-                    new_loc.extend(location[1:])
-                new_loc_str = " -> ".join(new_loc)
-                group_key = f"  {new_loc_str}\n  (旧版本为: {loc_str})"
-                error_groups[error_key] = (group_key, msg)
-        else:
-            error_groups[error_key] = (f"  {loc_str}", msg)
+        error_groups[error_key] = (f"  {loc_str}", msg)
 
     # 添加分组后的错误消息
     for _, (location, msg) in error_groups.items():

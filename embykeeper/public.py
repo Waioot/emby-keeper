@@ -4,13 +4,11 @@ import os
 from typing import List
 
 from loguru import logger
-from rich.prompt import Confirm, Prompt, IntPrompt, Confirm
+from rich.prompt import Confirm, Prompt, IntPrompt
 
-from .utils import show_exception
 from .config import ConfigManager, config
 from .schema import Config, TelegramAccount, EmbyAccount
 from .var import console
-from .log import pad
 from . import var, __url__
 
 
@@ -39,7 +37,7 @@ async def interactive_config(mongodb_url: str = None):
     logger.info("我们将为您生成配置, 需要您根据提示填入信息, 并按回车确认.")
     logger.info(f"配置帮助详见: {__url__}.")
     logger.info(f"若需要重新开始, 请点击右上方的刷新按钮.")
-    logger.info(f"若您需要更加高级的配置, 请使用右上角的 Config 按钮以修改配置文件.")
+    logger.info(f"若您需要更细的配置, 请使用右上角的 Config 按钮修改配置文件.")
 
     if not mongodb_url:
         logger.info("请输入 MongoDB 连接地址 [dark_green](mongodb://user:pass@host:port)[/],")
@@ -66,13 +64,7 @@ async def interactive_config(mongodb_url: str = None):
             pad + "请输入您的 Telegram 账号 (带国家区号) [dark_green](+861xxxxxxxxxx)[/]",
             console=console,
         )
-        monitor = Confirm.ask(
-            pad + "是否开启该账号的自动监控功能? (需要高级账号)", default=False, console=console
-        )
-        messager = Confirm.ask(
-            pad + "是否开启该账号的自动水群功能? (需要高级账号)", default=False, console=console
-        )
-        telegram_accounts.append(TelegramAccount(phone=phone, monitor=monitor, messager=messager))
+        telegram_accounts.append(TelegramAccount(phone=phone))
     if telegram_accounts:
         logger.info(f"即将尝试登录各账户并存储凭据, 请耐心等待.")
         await convert_session(telegram_accounts)
@@ -115,27 +107,10 @@ async def interactive_config(mongodb_url: str = None):
                 except ValueError:
                     logger.warning(f"时长设置不正确, 请重新输入.")
         emby_accounts.append(EmbyAccount(url=url, username=username, password=password, time=time))
-    advanced = Confirm.ask(pad + "是否配置高级设置", default=False, console=console)
+    advanced = Confirm.ask(pad + "是否调整详细设置", default=False, console=console)
     if advanced:
-        while True:
-            logger.info("发送关键日志消息到以下哪个账户?")
-            logger.info(f"\t0. 不使用消息推送功能")
-            for i, t in enumerate(telegram_accounts):
-                logger.info(f"\t{i+1}. {t.phone}")
-            selected = IntPrompt.ask(pad + "请选择", default=1, console=console)
-            if selected:
-                if selected > 0:
-                    if selected <= len(telegram_accounts):
-                        cfg.notifier.enabled = True
-                        cfg.notifier.account = selected
-                        break
-                    else:
-                        logger.warning("选择的账号不存在, 请重新选择.")
-                else:
-                    cfg.notifier.enabled = False
-                    break
-            else:
-                logger.warning("选择的账号不存在, 请重新选择.")
+        logger.info("日志推送由独立配置管理, 交互向导将默认关闭推送配置.")
+        cfg.notifier.enabled = False
         cfg.checkiner.timeout = IntPrompt.ask(
             pad + "设置每个 Telegram Bot 签到的最大尝试时间 (秒)",
             default=cfg.checkiner.timeout,
@@ -192,6 +167,8 @@ async def prepare_config_str(config_str: str, mongodb_url: str = None):
     config.set(cfg)
     if not cfg:
         return False
+
+    pad = " " * 23
 
     # Add MongoDB check
     if (not cfg.mongodb) and (not mongodb_url):

@@ -144,7 +144,6 @@ class ConfigManager(ProxyBase):
         from faker import Faker
         from faker.providers import internet, profile
 
-        from .telegram.dynamic import get_names
         from . import __version__, __url__
 
         fake = Faker()
@@ -258,19 +257,48 @@ class ConfigManager(ProxyBase):
         c.add(comment("每隔几天进行签到:"))
         c["interval_days"] = 1
         c.add(nl())
-        c.add(comment("智能签到器使用的 AI 服务地址:"))
-        c["ai_base_url"] = default_config.checkiner.ai_base_url
-        c.add(nl())
-        c.add(comment("智能签到器使用的 AI 模型名:"))
-        c["ai_model"] = default_config.checkiner.ai_model
-        c.add(nl())
-        c.add(comment("智能签到器使用的 AI API Key:"))
-        c["ai_api_key"] = default_config.checkiner.ai_api_key
         doc["checkiner"] = c
         c.add(nl())
 
+        doc.add(comment("=" * 80))
+        doc.add(comment("LLM 相关设置"))
+        doc.add(comment(f"详见: https://emby-keeper.github.io/guide/配置文件#llm-子项"))
+        doc.add(comment("=" * 80))
+        c = item({})
+        c.add(nl())
+        c.add(comment("默认文本能力配置, 供文本推断与视觉能力复用:"))
+        c["default"] = {
+            "base_url": "https://api.openai.com/v1",
+            "model": "gpt-4o-mini",
+            "api_key": "",
+        }
+        c.add(nl())
+        c.add(comment("验证码识别专用配置:"))
+        c["ocr"] = {
+            "base_url": "https://api.openai.com/v1",
+            "model": "gpt-4o-mini",
+            "api_key": "",
+            "prompt": "识别图中验证码，并去除空格后仅返回验证码文本（字母或数字）",
+        }
+        c.add(nl())
+        c.add(comment("图片选择题专用配置:"))
+        c["vision"] = {
+            "base_url": "https://api.openai.com/v1",
+            "model": "gpt-4o-mini",
+            "api_key": "",
+        }
+        c.add(nl())
+        c.add(comment("推理类文本能力专用配置:"))
+        c["reasoning"] = {
+            "base_url": "https://api.openai.com/v1",
+            "model": "gpt-4o-mini",
+            "api_key": "",
+        }
+        doc["llm"] = c
+        c.add(nl())
+
         c.add(comment("=" * 80))
-        c.add(comment("Telegram 账号, 您可以重复该片段多次以增加多个账号."))
+        c.add(comment("Telegram 账号（用于签到）, 您可以重复该片段多次以增加多个账号."))
         c.add(comment(f"详见: https://emby-keeper.github.io/guide/配置文件#telegram-account-子项"))
         c.add(comment("=" * 80))
         c = item({"account": [{}]})
@@ -283,20 +311,8 @@ class ConfigManager(ProxyBase):
         a.add(comment("启用机器人签到系列功能, 默认启用, 设置为 false 以禁用:"))
         a["checkiner"] = True
         a.add(nl())
-        a.add(comment("启用群组监控系列功能, 包括抢邀请码和回答问题等, 默认禁用, 设置为 true 以启用:"))
-        a["monitor"] = False
-        a.add(nl())
-        a.add(comment("启用自动水群系列功能, 风险较高, 默认禁用, 设置为 true 以启用:"))
-        a["messager"] = False
-        a.add(nl())
-        a.add(comment("启用定时抢注功能, 默认禁用, 设置为 true 以启用:"))
-        a["registrar"] = False
-        a.add(nl())
-        a.add(comment("跳过该账号的远程鉴权, 默认 false, 仅在您明确需要时启用:"))
-        a["skip_remote_auth"] = False
-        a.add(nl())
         doc["telegram"] = c
-        doc.add(comment("针对该账号的独特设置, 如需使用请将该段取消注释并修改. 详见 site 项和 checkiner 项."))
+        doc.add(comment("针对该账号的独特设置, 如需使用请将该段取消注释并修改. 详见 site 项和 checkiner_config 项."))
         a_specific = item(
             {
                 "telegram": {
@@ -326,10 +342,6 @@ class ConfigManager(ProxyBase):
                         {
                             "phone": f'+861{fake.numerify(text="##########")}',
                             "checkiner": True,
-                            "monitor": False,
-                            "messager": False,
-                            "registrar": False,
-                            "skip_remote_auth": False,
                         }
                     ]
                 }
@@ -339,39 +351,6 @@ class ConfigManager(ProxyBase):
             doc.add(comment(line))
 
         doc.add(nl())
-        doc.add(comment("=" * 80))
-        doc.add(comment("定时抢注相关设置"))
-        doc.add(comment(f"详见: https://emby-keeper.github.io/guide/配置文件#registrar-子项"))
-        doc.add(comment("=" * 80))
-        c = item({})
-        c.add(nl())
-        c.add(comment("最大可同时进行的注册任务数:"))
-        c["concurrency"] = default_config.registrar.concurrency
-        c.add(nl())
-        c.add(comment("各站点注册设置:"))
-        c.add(nl())
-        c.add(comment("案例 (站点每天定时抢注):"))
-        registrar1_lines = [
-            '[registrar."templ_a<XiguaEmbyBot>"]',
-            'times = ["9:00AM", "9:00PM"]',
-            "timeout = 120",
-            "retries = 1",
-        ]
-        for line in registrar1_lines:
-            c.add(comment(line))
-        c.add(nl())
-        c.add(comment("案例 (站点间隔抢注):"))
-        registrar2_lines = [
-            '[registrar."templ_a<XiguaEmbyBot>"]',
-            "interval_minutes = 2",
-            "timeout = 120",
-            "retries = 1",
-        ]
-        for line in registrar2_lines:
-            c.add(comment(line))
-        doc["registrar"] = c
-        c.add(nl())
-
         doc.add(comment("=" * 80))
         doc.add(comment("站点相关设置"))
         doc.add(comment("当您需要禁用某些站点时, 请将该段取消注释并修改."))
@@ -403,45 +382,19 @@ class ConfigManager(ProxyBase):
         for line in site.as_string().strip().split("\n"):
             doc.add(comment(line))
         doc.add(nl())
-        doc.add(comment("可以分别设置各个组件 (机器人签到 / 群组监控 / 自动水群) 的站点:"))
+        doc.add(comment("可以为签到器单独设置站点范围:"))
         site = item(
             {
                 "site": {
                     "checkiner": ["-terminus", "-temby"],
-                    "monitor": ["-misty"],
-                    "messager": ["pornfans"],
-                    "registrar": ["templ_a<XiguaEmbyBot>"],
                 }
             }
         )
         for line in site.as_string().strip().split("\n"):
             doc.add(comment(line))
         doc.add(nl())
-        site = item(
-            {
-                "site": {
-                    "checkiner": get_names("checkiner"),
-                    "monitor": get_names("monitor"),
-                    "messager": get_names("messager"),
-                    "registrar": get_names("registrar"),
-                }
-            }
-        )
-        doc.add(comment(f"默认启用站点:"))
-        for line in site.as_string().strip().split("\n"):
-            doc.add(comment(line))
-        doc.add(nl())
-        site = item(
-            {
-                "site": {
-                    "checkiner": get_names("checkiner", allow_ignore=True),
-                    "monitor": get_names("monitor", allow_ignore=True),
-                    "messager": get_names("messager", allow_ignore=True),
-                    "registrar": get_names("registrar", allow_ignore=True),
-                }
-            }
-        )
-        doc.add(comment(f"全部可用站点:"))
+        doc.add(comment("默认启用站点:"))
+        site = item({"site": {"checkiner": ["all"]}})
         for line in site.as_string().strip().split("\n"):
             doc.add(comment(line))
         doc.add(nl())
@@ -476,18 +429,17 @@ class ConfigManager(ProxyBase):
         c.add(nl())
         c.add(comment("启用签到/保活结果的日志推送:"))
         c["enabled"] = True
-        c.add(comment("使用第几个 Telegram 账号进行推送, 从 1 开始计数:"))
-        c["account"] = 1
-        c.add(
-            comment(
-                "默认情况下, 日志推送将在每天指定时间统一推送 (在 @embykeeper_bot 设置), 设置为 false 以立刻推送"
-            )
-        )
+        c.add(comment("Telegram Bot 推送配置:"))
+        c["telegram_bot"] = {
+            "bot_token": "123456:ABC",
+            "chat_id": "123456789",
+        }
+        c.add(comment("是否立刻推送日志, 默认关闭:"))
         c["immediately"] = False
         c.add(comment("默认情况下, 启动时立刻执行的一次签到/保活不会推送消息, 设置为 true 以推送"))
         c["once"] = False
-        c.add(comment("推送方式, 可选: telegram (默认), apprise"))
-        c["method"] = "telegram"
+        c.add(comment("推送方式, 可选: telegram_bot (默认), apprise"))
+        c["method"] = "telegram_bot"
         c.add(comment('Apprise 推送地址, 仅当 method = "apprise" 时有效'))
         c["apprise_uri"] = ""
         doc["notifier"] = c
