@@ -6,10 +6,10 @@ from faker import Faker
 import httpx
 
 from embykeeper.config import config
+from embykeeper.telegram.cf_turnstile import solve_turnstile_token
 from embykeeper.utils import to_iterable, truncate_str, get_proxy_str
 from embykeeper.runinfo import RunStatus
 
-from ..link import Link
 from ._templ_a import TemplateACheckin
 
 
@@ -18,7 +18,7 @@ class XiguaCheckin(TemplateACheckin):
     bot_username = "XiguaEmbyBot"
     bot_use_captcha = False
     bot_checkin_cmd = "/start"
-    additional_auth = ["captcha"]
+    required_capabilities = ["cf.turnstile"]
     templ_panel_keywords = ["冰镇西瓜"]
 
     async def message_handler(self, client, message: Message):
@@ -38,10 +38,11 @@ class XiguaCheckin(TemplateACheckin):
                             RequestWebView(peer=bot_peer, bot=bot_peer, platform="ios", url=url)
                         )
                     ).url
-                    token = await Link(self.client).captcha("xigua")
+                    token = await solve_turnstile_token(url_auth, log=self.log)
                     if not token:
-                        self.log.warning("签到失败: 验证码解析失败, 正在重试.")
+                        self.log.warning("本地 Turnstile 解析失败, 正在重试.")
                         return await self.retry()
+
                     scheme = urlparse(url)
                     url_submit = scheme._replace(path="/api/checkin/verify", query="", fragment="").geturl()
                     origin = scheme._replace(path="/", query="", fragment="").geturl()
@@ -70,7 +71,7 @@ class XiguaCheckin(TemplateACheckin):
                                     return await self.finish(RunStatus.NONEED, "今日已签到")
                                 else:
                                     self.log.warning(
-                                        f"签到失败: 验证码识别后接口返回异常信息:\n{truncate_str(result, 100)}, 可能是您的请求 IP 风控等级较高导致的."
+                                        f"签到失败: 接口返回异常信息:\n{truncate_str(result, 100)}, 可能是您的请求 IP 风控等级较高导致的."
                                     )
                                     return await self.fail()
                         except (httpx.ProxyError, httpx.TimeoutException, OSError):

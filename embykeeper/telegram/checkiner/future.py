@@ -11,9 +11,9 @@ from faker import Faker
 import httpx
 
 from embykeeper.config import config
+from embykeeper.telegram.cf_turnstile import solve_turnstile_token
 from embykeeper.utils import show_exception, truncate_str, get_proxy_str
 
-from ..link import Link
 from . import BotCheckin
 
 
@@ -24,7 +24,7 @@ class FutureCheckin(BotCheckin):
     bot_checkin_cmd = "/start"
     bot_text_ignore = ["請先完成驗證"]
     bot_fail_keywords = ["不能签到"]
-    additional_auth = ["captcha"]
+    required_capabilities = ["cf.turnstile"]
     max_retries = 2
 
     click_button = ["签到", "簽到"]
@@ -114,43 +114,43 @@ class FutureCheckin(BotCheckin):
         await super().message_handler(client, message)
 
     async def solve_captcha(self, url: str):
-        token = await Link(self.client).captcha("future_echo")
+        token = await solve_turnstile_token(url, log=self.log)
         if not token:
+            self.log.warning("本地 Turnstile 解析失败, 无法继续签到.")
             return False
-        else:
-            scheme = urlparse(url)
-            params = parse_qs(scheme.query)
-            url_submit = scheme._replace(path="/x/api/submit", query="", fragment="").geturl()
-            uuid = params.get("id", [None])[0]
-            origin = scheme._replace(path="/", query="", fragment="").geturl()
-            useragent = Faker().safari()
-            headers = {
-                "Content-Type": "application/x-www-form-urlencoded",
-                "Referer": url,
-                "Origin": origin,
-                "User-Agent": useragent,
-            }
-            data = {
-                "uuid": uuid,
-                "cf-turnstile-response": token,
-            }
-            for i in range(10):
-                try:
-                    async with httpx.AsyncClient(http2=True, proxy=get_proxy_str(config.proxy)) as client:
-                        resp = await client.post(url_submit, headers=headers, data=data)
-                        result = resp.text
-                        if "完成" in result:
-                            return True
-                        else:
-                            self.log.warning(
-                                f"验证码识别后接口返回异常信息:\n{truncate_str(result, 100)}, 可能是您的请求 IP 风控等级较高导致的."
-                            )
-                            return False
-                except (httpx.ProxyError, httpx.TimeoutException, OSError):
+
+        scheme = urlparse(url)
+        params = parse_qs(scheme.query)
+        url_submit = scheme._replace(path="/x/api/submit", query="", fragment="").geturl()
+        uuid = params.get("id", [None])[0]
+        origin = scheme._replace(path="/", query="", fragment="").geturl()
+        useragent = Faker().safari()
+        headers = {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Referer": url,
+            "Origin": origin,
+            "User-Agent": useragent,
+        }
+        data = {
+            "uuid": uuid,
+            "cf-turnstile-response": token,
+        }
+        for i in range(10):
+            try:
+                async with httpx.AsyncClient(http2=True, proxy=get_proxy_str(config.proxy)) as client:
+                    resp = await client.post(url_submit, headers=headers, data=data)
+                    result = resp.text
+                    if "完成" in result:
+                        return True
                     self.log.warning(
-                        f"无法连接到站点的页面, 可能是您的网络或代理不稳定, 正在重试 ({i+1}/10)."
+                        f"验证码识别后接口返回异常信息:\n{truncate_str(result, 100)}, 可能是您的请求 IP 风控等级较高导致的."
                     )
-                    continue
-            else:
-                self.log.warning(f'无法连接到站点的页面: "{url_submit}", 可能是您的网络或代理不稳定.')
-                return False
+                    return False
+            except (httpx.ProxyError, httpx.TimeoutException, OSError):
+                self.log.warning(
+                    f"无法连接到站点的页面, 可能是您的网络或代理不稳定, 正在重试 ({i+1}/10)."
+                )
+                continue
+        else:
+            self.log.warning(f'无法连接到站点的页面: "{url_submit}", 可能是您的网络或代理不稳定.')
+            return False

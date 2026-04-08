@@ -11,10 +11,10 @@ from faker import Faker
 import httpx
 
 from embykeeper.config import config
+from embykeeper.telegram.cf_turnstile import solve_turnstile_token
 from embykeeper.utils import to_iterable, truncate_str, get_proxy_str
 from embykeeper.runinfo import RunStatus
 
-from ..link import Link
 from ._templ_a import TemplateACheckin
 
 
@@ -23,7 +23,7 @@ class RujiCheckin(TemplateACheckin):
     bot_username = "ljembyfukh_bot"
     bot_use_captcha = False
     bot_checkin_cmd = "/start"
-    additional_auth = ["captcha"]
+    required_capabilities = ["cf.turnstile"]
 
     signing_secret = "yNPEhmtaRwxYxk0LABf-pCeU6LlmE3CikoPej-g6xpQ"
 
@@ -52,15 +52,16 @@ class RujiCheckin(TemplateACheckin):
                     url_auth = (
                         await self.client.invoke(
                             RequestWebView(peer=bot_peer, bot=bot_peer, platform="ios", url=url)
-                        )
+                    )
                     ).url
                     scheme = urlparse(url_auth)
                     params = parse_qs(scheme.fragment)
                     webapp_data = params.get("tgWebAppData", [""])[0]
-                    token = await Link(self.client).captcha("ruji")
+                    token = await solve_turnstile_token(url_auth, log=self.log)
                     if not token:
-                        self.log.warning("签到失败: 验证码解析失败, 正在重试.")
+                        self.log.warning("本地 Turnstile 解析失败, 正在重试.")
                         return await self.retry()
+
                     scheme = urlparse(url)
                     url_submit = scheme._replace(path="/api/checkin/verify", query="", fragment="").geturl()
                     origin = scheme._replace(path="/", query="", fragment="").geturl()
@@ -109,9 +110,9 @@ class RujiCheckin(TemplateACheckin):
                                         detail = json_result.get("detail", "未知错误")
                                         self.log.info(detail)
                                         return await self.finish(RunStatus.ERROR, "签到失败")
-                                except:
+                                except Exception:
                                     self.log.warning(
-                                        f"签到失败: 验证码识别后接口返回异常信息:\n{truncate_str(result, 100)}, 可能是您的请求 IP 风控等级较高导致的."
+                                        f"签到失败: 接口返回异常信息:\n{truncate_str(result, 100)}, 可能是您的请求 IP 风控等级较高导致的."
                                     )
                                     return await self.fail()
 
