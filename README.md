@@ -6,30 +6,22 @@
   </a>
 </p>
 <p align="center">
-    <b>自动签到 定时保号 按需水群</b>
+    <b>自动签到 定时保号</b>
 </p>
 
 ---
 
 ## 功能
 
-Embykeeper 是一个 Emby 影视服务器签到保号的自动执行工具, 它主要提供两大核心功能:
+Embykeeper 是一个专注于 Emby 影视服务器签到保号的自动执行工具, 核心功能只有两项:
 
 1. **TG 机器人签到** - 可以自动完成 50+ 站点的 Telegram 机器人每日签到, 以获取积分.
 
 2. **Emby 保号** - 通过模拟登录和播放视频, 定期保持 Emby 账号的活跃状态, 支持任何 Emby 站点.
 
-除此之外, Embykeeper 还提供了一些额外功能：
+项目支持 Python 运行、Docker 部署或云部署, 且完全开源, 不存储任何密钥或隐私信息.
 
-1. **自动抢注** - 监听邀请码发码信息和开放注册信息, 并自动抢注.
-
-2. **群组游戏** - 自动完成群组内的抢红包和答题等游戏, 以获取积分.
-
-3. **考核辅助** - 站点考核自动接入 GPT 和 已知题库, 提高通过率.
-
-4. **便捷的二次开发** - 基于 Pyrogram 开发, 提供了一套便捷的框架来实现新的签到器.
-
-项目支持 Python 运行、Docker 部署或云部署, 且完全开源, 不存储任何密钥或隐私信息, 经两年的开发已经在稳定和安全性方面有一定保证.
+验证码识别、视觉题、文本推断和日志推送都可以通过本地 OpenAI 兼容模型与您自己的 Telegram Bot 完成, 不依赖作者机器人.
 
 ## 声明
 
@@ -37,7 +29,7 @@ Embykeeper 是一个 Emby 影视服务器签到保号的自动执行工具, 它�
 
 本项目设计初衷是在中文 Emby 社群规则下, 保号要求逐渐苛刻 (部分要求每月登录或每日签到), 这使得休闲时间紧张的人士难以安心使用. 本项目仅旨在帮助该类人群保号, 不鼓励持有大量 Emby 账号而不使用, 导致真正需要的人、为中文影视资源分享和翻译有贡献的人难以获得账号的行为, 开发团队也呼吁仅保留 1-2 个较全面质量较高的 Emby 服务器. 本项目仅提供工具, 具体使用形式及造成的影响和后果与开发团队无关.
 
-Embykeeper 将自动向 Embykeeper Auth Bot ([@embykeeper_auth_bot](https://t.me/embykeeper_auth_bot))" 发送信息, 用于在线验证码解析、日志记录、用户验证等, 内容不含任何密码或密钥信息, 或其他敏感隐私信息.
+验证码识别、智能回复和日志推送均改为本地 LLM 与您自己的 Telegram Bot 配置完成, 不再依赖作者机器人, 也不会把账号密钥发送给第三方服务.
 
 当您安装并使用该工具, 默认您已经阅读并同意上述声明, 并确认自己并非出于"集邮"目的而安装.
 
@@ -140,9 +132,9 @@ docker run -v $(pwd)/embykeeper:/app --rm -it --net=host embykeeper/embykeeper -
 
   <!-- #endregion checkiner-sites -->
 
-  - **更多签到站**可通过[模板配置](https://emby-keeper.github.io/guide/配置文件#service-子项)或[二次开发](https://emby-keeper.github.io/guide/参与开发#每日签到站点)实现.
+  - **更多签到站**可通过站点模板继续扩展.
 
-  - 测试中新签到器 (默认禁用, 请参考[教程文档](https://emby-keeper.github.io/guide/配置文件#service-子项)启用):
+  - 测试中新签到器 (默认禁用):
     <!-- #region checkiner-beta-sites -->
 
     - PornFans: [频道](https://t.me/PornFansChannel) [群组](https://t.me/PornFans_Chat) [机器人](https://t.me/Porn_Emby_Bot)
@@ -155,7 +147,7 @@ docker run -v $(pwd)/embykeeper:/app --rm -it --net=host embykeeper/embykeeper -
     - 音海拾贝 (`navidrome`): [频道](https://t.me/navidrom_notify) [群组](https://t.me/navidrom_talk) [机器人](https://t.me/navidrome_bot)
 
     <!-- #endregion checkiner-beta-sites -->
-  - 关服, 无响应, 或已停用签到功能 (默认禁用, 请参考[教程文档](https://emby-keeper.github.io/guide/配置文件#service-子项)启用):
+  - 关服, 无响应, 或已停用签到功能 (默认禁用):
     <!-- #region checkiner-ignored-sites -->
 
     - July (`july`): ~~[群组](https://t.me/July_emby) [机器人](https://t.me/NASTOOL7_bot)~~
@@ -186,111 +178,6 @@ docker run -v $(pwd)/embykeeper:/app --rm -it --net=host embykeeper/embykeeper -
     - AWA 音乐服 (`awamusic`): ~~[频道](https://t.me/vpsliebiao) [群组](https://t.me/vpsliebiaochat) [机器人](https://t.me/awamm_bot)~~
 
     <!-- #endregion checkiner-ignored-sites -->
-  - 其他非 Emby 相关 (默认禁用, 请参考[教程文档](https://emby-keeper.github.io/guide/配置文件#service-子项)启用):
-    <!-- #region checkiner-other-sites -->
-
-    - HDHive (`hdhive`): [群组](https://t.me/alypzyhzq) [机器人](https://t.me/HDHiveBot)
-    - 搜书神器 (`sssq`): [机器人](https://t.me/sosdbot?start=fromid_6489896414)
-    - 纸片 DDoS (`zhipian`): [频道](https://t.me/PaperBotnet) [机器人](https://t.me/zhipianbot?start=2zbx04e)
-    - 情报局社工库 (`infsgk`): [机器人](https://t.me/qbjSGKzhuquebot?start=NjQ4OTg5NjQxNA==)
-    - AI 社工库 (`aisgk`): [频道](https://t.me/AISGKChannel) [机器人](https://t.me/aishegongkubot?start=AISGK_BZ5728VM)
-    - 狗狗社工库 (`dogsgk`): [频道](https://t.me/DogeSGK) [机器人](https://t.me/DogeSGK_bot?start=6489896414)
-    - 花花社工库 (`huasgk`): [频道](https://t.me/sgkhua) [机器人](https://t.me/sgkvipbot?start=vip_1211595)
-    - 天猫社工库 (`tianmaosgk`): [机器人](https://t.me/UISGKbot?start=7s3rgxyf)
-    - 平安社工库 (`pingansgk`): [机器人](https://t.me/pingansgk_bot?start=cOfqBqegLS)
-    - 小熊社工库 (`bearsgk`): [机器人](https://t.me/BearSGK_bot?start=6489896414)
-    - 数据社工库 (`datasgk`): [机器人](https://t.me/datasgk_bot?start=6489896414)
-    - 助手社工库 (`zhushousgk`): [机器人](https://t.me/sgk001_bot?start=NjQ4OTg5NjQxNA==)
-    - 星月社工库 (`starsgk`): [机器人](https://t.me/XY_SGKBOT?start=kta1ELmKuM)
-    - Bit 社工库 (`bitsgk`): [机器人](https://t.me/BitSGKBot?start=a085f7b00dcf)
-    - 迷你世界社工库 (`minisgk`): [机器人](https://t.me/mnsjsgkbot?start=4146989846)
-    - 冰岛社工库 (`bingdaosgk`): [机器人](https://t.me/BingDaoSGKBot?start=eM81qS9k)
-    - 春江社工库 (`chunjiangsgk`): [机器人](https://t.me/ChunJiang_SGK_Bot?start=J74d1R73Z)
-    - Koi 社工库 ('koisgk'): [机器人](https://t.me/KoiSGKbot?start=NI5kOPo9)
-    - 清风社工库 (`qingfengsgk`): [机器人](https://t.me/Weifeng007_bot?start=iTMnapPg1Y)
-    - Xray 社工库 (`xraysgk`): [机器人](https://t.me/Zonesgk_bot?start=XSZAZAXSPS)
-    - Seed 社工库 (`seedsgk`): [机器人](https://t.me/SeedSGKBOT?start=38weac31b)
-    - Master 社工库 (`mastersgk`): [机器人](https://t.me/BaKaMasterBot?start=dWxzgkRSBj)
-    - 繁花社工库 (`fanhuasgk`): [机器人](https://t.me/FanHuaSGK_bot?start=FanHua_ALCPRMHA)
-    - 度娘社工库 (`baidusgk`): [机器人](https://t.me/baidusell_bot?start=6489896414)
-    - 红鼻子社工库 (`rednosesgk`): [机器人](https://t.me/freesgk123_bot?start=ZZVFMECU)
-    - 银联社工库 (`unionsgk`): [机器人](https://t.me/unionpaysgkbot?start=NjQ4OTg5NjQxNA==)
-    - 007 社工库 (`agentsgk`): [机器人](https://t.me/sgk007_bot?start=NjQ4OTg5NjQxNA)
-    - 约翰社工库 (`johnsgk`): [机器人](https://t.me/yuehanbot?start=6489896414v4fufb)
-    - 知乎社工库 (`zhihusgk`): [机器人](https://t.me/zhihu_bot?start=ZHIHU_PIIIBARB)
-    - Carll 社工库 1 (`carll1sgk`): [机器人](https://t.me/Carllnet_bot?start=6489896414)
-    - Carll 社工库 2 (`carll2sgk`): [机器人](https://t.me/Carllnet2_bot?start=6489896414)
-    - Ingeek 社工库 (`ingeeksgk`): [机器人](https://t.me/ingeeksgkbot?start=NjQ4OTg5NjQxNA==)
-    - 叮当猫社工库 (`dingdangsgk`): [机器人](https://t.me/DingDangCats_Bot?start=d9bb127efc6127d1)
-    - 魔神社工库 (`moshensgk`): [机器人](https://t.me/moshensgk_bot?start=NjQ4OTg5NjQxNA==)
-    - Bost 社工库 (`bostsgk`): [机器人](https://t.me/BOST_SGK_BOT?start=6489896414)
-    - Oixel (`oixel`): [机器人](https://t.me/oixel_bot?start=QvSBSqCG)
-    - 飞机工具箱 (`feiji`): [机器人](https://t.me/fjtool_bot?start=6489896414C44)
-    - 鸟哥轰炸 (`niaoge`): [机器人](https://t.me/nb3344bot?start=6489896414)
-    - Bytevirt (`bytevirt_group`): [群组](https://t.me/bytevirtchat)
-    - 金鼎轰炸 (`jinding`): [机器人](https://t.me/jdHappybot?start=6489896414)
-    - M78 星云 (`m78`): [机器人](https://t.me/M78CheckIn_bot)
-
-    <!-- #endregion checkiner-other-sites -->
-- **Telegram 自动监控信息**
-  <!-- #region monitor-sites -->
-
-  - PornFans:
-    - 问题回答 (`pornfans_answer`): [群组](https://t.me/embytestflight)
-    - 科举考试 (`pornfans_exam`): [群组](https://t.me/embytestflight)
-    - 自动抢注 (`pornfans_register`): [群组](https://t.me/embytestflight)
-    - 自动抢红包雨 (`pornfans_dragon_rain`): [群组](https://t.me/embytestflight)
-    - 自动翻倍 (`pornfans_double`): [群组](https://t.me/embytestflight)
-    - 无 HP 自动停止自动水群 (`pornfans_nohp`): [群组](https://t.me/embytestflight)
-    - 风险时期自动停止 (`pornfans_alert`): [群组](https://t.me/embytestflight)
-  - 不给看 抢邀请码 (`bgk`): [群组](https://t.me/Ephemeralemby) [机器人](https://t.me/UnknownEmbyBot)
-  - 叔服 抢邀请码 (`shufu`): [群组](http://t.me/+4eq37Ip8ayRhNDI9) [机器人](https://t.me/dashu660_bot)
-  - Misty 开注自动注册 (`misty`): [频道](https://t.me/FreeEmbyChannel) [群组](https://t.me/FreeEmby) [机器人](https://t.me/EmbyMistyBot)
-  - 蜗壳 开注自动注册 (`misty`): [频道](https://t.me/WalkingAudio) [群组](https://t.me/Walking_Chat) [机器人](https://t.me/Readsnail_bot)
-
-  <!-- #endregion monitor-sites -->
-  - 测试中的站点 (默认禁用, 请参考[教程文档](https://emby-keeper.github.io/guide/配置文件#service-子项)启用):
-    <!-- #region monitor-beta-sites -->
-
-    - 未响 抢邀请码 (`future`): [频道](https://t.me/FutureEcho_Notice) [群组](https://t.me/FutureEcho_Chat) [机器人](https://t.me/lotayu_bot)
-    - 终点站 考核辅助 (`terminus_exam`): [频道](https://t.me/embypub) [群组](https://t.me/EmbyPublic) [机器人](https://t.me/EmbyPublicBot)
-
-    <!-- #endregion monitor-beta-sites -->
-  - 关服或无响应 (默认禁用, 请参考[教程文档](https://emby-keeper.github.io/guide/配置文件#service-子项)启用):
-    <!-- #region monitor-ignored-sites -->
-
-    - 全局自动从众 (`follow`): 当在任何群组中发现 5 分钟内 5 条一样内容的消息, 会自动跟一句 (影响范围大默认禁用)
-    - Polo 抢邀请码 (`polo`): ~~[频道](https://t.me/poloembyc) [群组](https://t.me/poloemby) [机器人](https://t.me/polo_emby_bot)~~
-    - 剧狗 开注自动注册 (`judog`): ~~[频道](https://t.me/Mulgoreemby) [机器人](https://t.me/mulgorebot)~~
-    - Embyhub 开注自动注册 (`embyhub`): ~~[频道](https://t.me/embyhub) [群组](https://t.me/emby_hub) [机器人](https://t.me/EdHubot)~~
-    - Viper 抢邀请码 (`viper`): ~~[频道](https://t.me/viper_emby_channel) [群组](https://t.me/Viper_Emby_Chat) [机器人](https://t.me/viper_emby_bot)~~
-
-    <!-- #endregion monitor-ignored-sites -->
-
-- **Telegram 自动水群**
-  <!-- #region messager-sites -->
-
-  <!-- #endregion messager-sites -->
-
-  - 测试中的站点 (默认禁用, 请参考[教程文档](https://emby-keeper.github.io/guide/配置文件#service-子项)启用):
-    <!-- #region messager-beta-sites -->
-
-    - Marmot (`marmot`) (周末早晚签到): [频道](https://t.me/Marmot_Emby_Channel) 群组 (非公开) [机器人](https://t.me/Marmot_Emby_Account_BOT)
-
-    - PornFans (`pornfans`) (打怪兽水群): [频道](https://t.me/PornFansChannel) [群组](https://t.me/embytestflight) [机器人](https://t.me/Porn_Emby_Bot)
-
-    - PornFans 智能化回答 (`smart_pornfans`) (打怪兽水群, AI 会考虑上下文和群组语言风格进行回答): [频道](https://t.me/PornFansChannel) [群组](https://t.me/embytestflight) [机器人](https://t.me/Porn_Emby_Bot)
-
-    <!-- #endregion messager-beta-sites -->
-  - 关服或无响应 (默认禁用, 请参考[教程文档](https://emby-keeper.github.io/guide/配置文件#service-子项)启用):
-    <!-- #region messager-ignored-sites -->
-
-    - NakoNako 自动水群 (`nakonako`): ~~[群组](https://t.me/NakoNetwork) [机器人](https://t.me/nakonetwork_bot)~~
-
-    <!-- #endregion messager-ignored-sites -->
-
-**注意**: 部分功能由于涉及竞争条件和付费验证码解析服务等, 仅有[高级用户](https://emby-keeper.github.io/guide/高级用户)才能使用, 您需要共享邀请码或[赞助项目](https://afdian.com/a/jackzzs)以成为永久有效期的高级用户.
-
 ## 支持 Embykeeper
 
 ##### 开发者团队
