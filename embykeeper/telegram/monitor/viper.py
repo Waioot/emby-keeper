@@ -10,7 +10,6 @@ class ViperMonitor(Monitor):
     chat_name = "Viper_Emby_Chat"
     notify_create_name = True
     allow_edit = False
-    additional_auth = ["prime"]
 
     async def on_trigger(self, message: Message, key, reply):
         await self.client.send_message(self.bot_username, f"/invite {key}")

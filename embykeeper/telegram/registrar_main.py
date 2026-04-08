@@ -18,7 +18,6 @@ from embykeeper.utils import AsyncTaskPool
 from .pyrogram import Client
 from .embyboss import EmbybossRegister
 from .dynamic import extract, get_cls
-from .link import Link
 from .session import ClientsSession
 
 logger = logger.bind(scheme="teleregistrar")
@@ -228,10 +227,6 @@ class RegisterManager:
                 log = logger.bind(name=f"{client.me.full_name}, @{bot_username}")
                 log.info(f"开始连续注册, 间隔 {interval_minutes} 分钟.")
 
-                if not await Link(client).auth("registrar", log_func=log.error):
-                    log.error("账户权限验证失败.")
-                    return
-
                 embyboss_register = EmbybossRegister(
                     client=client,
                     logger=log,
@@ -302,10 +297,6 @@ class RegisterManager:
                 bot_username = match.group(1) if match else site_name
 
                 log = logger.bind(name=f"{client.me.full_name}, @{bot_username}")
-
-                if not await Link(client).auth("registrar", log_func=log.error):
-                    log.error("账户权限验证失败.")
-                    return
 
                 clses = extract(get_cls("registrar", names=[site_name]))
                 if not clses:
@@ -407,9 +398,6 @@ class RegisterManager:
 
                 log = logger.bind(name=f"{client.me.full_name}, @{bot_username}")
 
-                if not await Link(client).auth("registrar", log_func=log.error):
-                    return
-
                 cls = get_cls("registrar", names=[site_name])[0]
 
                 register = cls(
@@ -448,9 +436,6 @@ class RegisterManager:
 
         if not clses:
             log.warning("没有任何有效注册站点, 注册将跳过.")
-            return
-
-        if not await Link(client).auth("registrar", log_func=log.error):
             return
 
         config_to_use = account.registrar_config or config.registrar
@@ -570,9 +555,6 @@ class RegisterManager:
         async with ClientsSession([account]) as clients:
             async for a, client in clients:
                 log = logger.bind(name=f"{client.me.full_name}, @{bot_username}")
-
-                if not await Link(client).auth("registrar", log_func=log.error):
-                    return
 
                 embyboss_register = EmbybossRegister(
                     client=client,

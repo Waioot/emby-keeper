@@ -15,14 +15,15 @@ import yaml
 from cachetools import LRUCache
 
 from embykeeper import __name__ as __product__
+from embykeeper.capabilities import check_capabilities, format_missing_capabilities
 from embykeeper.data import get_data
+from embykeeper.llm.text import infer_text
 from embykeeper.utils import show_exception, truncate_str, distribute_numbers
 from embykeeper.runinfo import RunContext, RunStatus
 from embykeeper.config import config
 from embykeeper.schema import TelegramAccount
 
 from ..session import ClientsSession
-from ..link import Link
 from ..pyrogram import Client
 
 if TYPE_CHECKING:
@@ -37,7 +38,8 @@ class SmartMessager:
     name: str = None  # 水群器名称
     chat_name: str = None  # 群聊的名称
     style_message_list: str = None  # 语言风格参考话术列表资源名
-    additional_auth: List[str] = []  # 额外认证要求
+    required_capabilities: List[str] = ["llm.text"]  # 运行所需的本地能力
+    unsupported_reason: str = None  # 当前阶段不支持的原因
     min_interval: int = None  # 预设两条消息间的最小间隔时间
     max_interval: int = None  # 预设两条消息间的最大间隔时间
     at: Iterable[Union[str, time]] = None  # 可发送的时间范围
@@ -108,12 +110,19 @@ class SmartMessager:
     async def start(self):
         """自动水群器的入口函数."""
         self.ctx.start(RunStatus.INITIALIZING)
+        if self.unsupported_reason:
+            self.log.info(f"初始化信息: {self.unsupported_reason}")
+            self.ctx.finish(RunStatus.IGNORE, "当前阶段不支持")
+            return False
         async with ClientsSession([self.account]) as clients:
             async for _, tg in clients:
-                if self.additional_auth:
-                    for a in self.additional_auth:
-                        if not await Link(tg).auth(a, log_func=self.log.info):
-                            return False
+                ok, missing = check_capabilities(self.required_capabilities, tg)
+                if not ok:
+                    self.log.info(
+                        f"初始化信息: 缺少本地能力 {format_missing_capabilities(missing)}, 已跳过当前任务."
+                    )
+                    self.ctx.finish(RunStatus.IGNORE, "缺少本地能力")
+                    return False
 
             if self.max_interval and self.min_interval > self.max_interval:
                 self.log.warning(f"发生错误: 最小间隔不应大于最大间隔, 自动水群将停止.")
@@ -328,7 +337,7 @@ class SmartMessager:
         if not prompt:
             return
 
-        answer, _ = await Link(tg).infer(prompt)
+        answer, _ = await infer_text(prompt, tg, log=log, profile_name="default")
 
         if answer:
             if self.max_length and len(answer) > self.max_length:

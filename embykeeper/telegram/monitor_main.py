@@ -11,7 +11,6 @@ from embykeeper.runinfo import RunContext
 
 from .monitor import Monitor
 from .dynamic import extract, get_cls, get_names
-from .link import Link
 from .session import ClientsSession
 from .pyrogram import Client
 
@@ -93,9 +92,6 @@ class MonitorManager:
         if not clses:
             if site is not None:  # Only show warning if sites were specified but none were valid
                 log.warning("没有任何有效监控站点, 监控将跳过.")
-            return
-
-        if not await Link(client).auth("monitor", log_func=log.error):
             return
 
         monitors = []

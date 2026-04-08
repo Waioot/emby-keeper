@@ -3,7 +3,6 @@ import re
 
 from pyrogram import Client
 from pyrogram.types import Message
-from ..link import Link
 from . import BotCheckin
 
 __ignore__ = True
@@ -14,7 +13,7 @@ class CharonCheckin(BotCheckin):
     bot_username = "charontv_bot"
     bot_success_pat = r".*(\d+)"
     bot_text_ignore = ["已结束当前对话"]
-    additional_auth = ["captcha"]
+    unsupported_reason = "卡戎依赖已移除的远程验证码能力，当前阶段已跳过。"
     bot_success_keywords = ["签到成功"]
     bot_fail_keywords = ["购买账号"]
 
@@ -37,11 +36,5 @@ class CharonCheckin(BotCheckin):
         return await super().message_handler(client, message)
 
     async def handle_url(self, url: str):
-        self.log.debug(f"即将解析网页中的验证码: {url}.")
-        for i in range(3):
-            result = await Link(self.client).captcha_content("charon", url)
-            if result:
-                await self.client.send_message(self.bot_username, result)
-                break
-            else:
-                self.log.warning(f"正在重试解析验证码 ({i+1} / 3).")
+        self.log.warning(self.unsupported_reason)
+        return await self.fail()

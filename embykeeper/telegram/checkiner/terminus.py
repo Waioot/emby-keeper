@@ -4,17 +4,18 @@ import emoji
 from pyrogram.types import Message
 from pyrogram.errors import RPCError
 
-from ..link import Link
+from embykeeper.llm.vision import choose_option
+
 from . import AnswerBotCheckin
 
 
 class TerminusCheckin(AnswerBotCheckin):
     name = "终点站"
     bot_username = "EmbyPublicBot"
-    bot_checkin_cmd = ["/checkin"]
+    bot_checkin_cmd = ["/cancel", "/checkin"]
     bot_text_ignore = ["会话已取消", "没有活跃的会话"]
     bot_checked_keywords = ["今天已签到"]
-    additional_auth = ["visual"]
+    required_capabilities = ["llm.vision"]
     max_retries = 1
     bot_use_history = 3
 
@@ -28,12 +29,12 @@ class TerminusCheckin(AnswerBotCheckin):
             if len(options) < 2:
                 return
             for i in range(3):
-                result, by = await Link(self.client).visual(message.photo.file_id, options_cleaned)
+                result, by = await choose_option(self.client, message.photo.file_id, options_cleaned, log=self.log)
                 if result:
-                    self.log.debug(f"已通过远端 ({by}) 解析答案: {result}.")
+                    self.log.debug(f"已解析答案 ({by}): {result}.")
                     break
                 else:
-                    self.log.warning(f"远端解析失败, 正在重试解析 ({i + 1}/3).")
+                    self.log.warning(f"识别失败, 正在重试解析 ({i + 1}/3).")
             else:
                 self.log.warning(f"签到失败: 验证码识别错误.")
                 return await self.fail()

@@ -4,11 +4,10 @@ from pathlib import Path
 import tomli as tomllib
 from loguru import logger
 
-from embykeeper.telegram.session import ClientsSession
-from embykeeper.telegram.link import Link
 from embykeeper.cli import AsyncTyper
 from embykeeper.notify import start_notifier
 from embykeeper.config import config
+from embykeeper.notifier.telegram_bot import resolve_bot_token, resolve_chat_id, send_message
 
 app = AsyncTyper()
 
@@ -16,28 +15,23 @@ app = AsyncTyper()
 @app.async_command()
 async def log(config_file: Path):
     await config.reload_conf(config_file)
-    await start_notifier(config)
+    await start_notifier()
     logger.bind(log=True).info("Test logging.")
 
 
 @app.async_command()
 async def disconnect(config_file: Path):
     await config.reload_conf(config_file)
-    ClientsSession.watch = asyncio.create_task(ClientsSession.watchdog(40))
+    bot_token = resolve_bot_token()
+    chat_id = resolve_chat_id()
+    if not bot_token or chat_id is None:
+        raise RuntimeError("未配置可用的 Telegram Bot 推送参数")
     print("Sending Test1")
-    async with ClientsSession(config.telegram.account[:1]) as clients:
-        async for _, client in clients:
-            await Link(client).send_msg("ERROR#Test1")
-            break
+    await send_message(bot_token, chat_id, "ERROR#Test1")
     print("Wait for 40 seconds")
     await asyncio.sleep(40)
-    print("Watchdog should be triggered")
-    print("Wait for another 20 seconds")
-    await asyncio.sleep(20)
-    async with ClientsSession(config.telegram.account[:1]) as clients:
-        async for _, client in clients:
-            await Link(client).send_msg("ERROR#Test1")
-            break
+    print("Sending Test2")
+    await send_message(bot_token, chat_id, "ERROR#Test2")
     print("Sent Test2")
 
 

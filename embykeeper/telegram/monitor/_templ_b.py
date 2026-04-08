@@ -36,7 +36,6 @@ class TemplateBMonitorConfig(BaseModel):
 
 class TemplateBMonitor(Monitor):
     init_first = True
-    additional_auth = ["prime"]
 
     async def init(self):
         try:

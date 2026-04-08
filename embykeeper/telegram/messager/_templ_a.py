@@ -27,7 +27,6 @@ class TemplateAMessagerConfig(BaseModel):
 
 
 class TemplateAMessager(Messager):
-    additional_auth = ["prime"]
 
     async def init(self):
         try:

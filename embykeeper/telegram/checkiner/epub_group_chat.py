@@ -1,8 +1,8 @@
 import asyncio
 
+from embykeeper.llm.text import infer_text
 from embykeeper.utils import to_iterable
 
-from ..link import Link
 from . import BotCheckin
 
 __ignore__ = True
@@ -11,7 +11,7 @@ __ignore__ = True
 class EPubGroupChatCheckin(BotCheckin):
     name = "EPub 电子书库群组每日发言"
     chat_name = "libhsulife"
-    additional_auth = ["prime"]
+    required_capabilities = ["llm.text"]
     bot_use_captcha = False
 
     async def send_checkin(self, retry=False):
@@ -22,7 +22,7 @@ class EPubGroupChatCheckin(BotCheckin):
                 "prompt",
                 f"请输出{times}行的诗, 所有行都至少{min_letters}个字, 必须严格遵守每行字数要求！最多{times+2}行, 只输出古诗内容, 禁止输出其他提示语言, 禁止输出逗号句号, 每行开头必须有标号'@@@'",
             )
-            answer, by = await Link(self.client).gpt(prompt)
+            answer, by = await infer_text(prompt, self.client, log=self.log)
             if not answer:
                 continue
             lines = [

@@ -12,7 +12,6 @@ from faker import Faker
 from embykeeper.config import config
 from embykeeper.utils import get_proxy_str
 
-from ..link import Link
 from . import Monitor
 
 
@@ -23,37 +22,11 @@ class FutureMonitor(Monitor):
     chat_name = "FutureEcho_Chat"
     notify_create_name = True
     allow_edit = False
-    additional_auth = ["captcha"]
+    unsupported_reason = "未响抢注依赖已移除的远程验证码能力，当前阶段已跳过。"
 
     async def solve_captcha(self, url: str):
-        token = await Link(self.client).captcha("future_echo")
-        if not token:
-            return False
-        else:
-            scheme = urlparse(url)
-            params = parse_qs(scheme.query)
-            url_submit = scheme._replace(path="/x/api/submit", query="", fragment="").geturl()
-            uuid = params.get("id", [None])[0]
-            origin = scheme._replace(path="/", query="", fragment="").geturl()
-            useragent = Faker().safari()
-            headers = {
-                "Content-Type": "application/x-www-form-urlencoded",
-                "Referer": url,
-                "Origin": origin,
-                "User-Agent": useragent,
-            }
-            data = {
-                "uuid": uuid,
-                "cf-turnstile-response": token,
-            }
-            try:
-                async with httpx.AsyncClient(http2=True, proxy=get_proxy_str(config.proxy)) as client:
-                    resp = await client.post(url_submit, headers=headers, data=data)
-                    result = resp.text
-                    if "完成" in result:
-                        return True
-            except:
-                return False
+        self.log.warning(self.unsupported_reason)
+        return False
 
     async def on_trigger(self, message: Message, key, reply):
         for i in range(3):

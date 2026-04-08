@@ -16,7 +16,6 @@ class ShufuMonitor(Monitor):
     chat_keyword = r"SHUFU-\d+-Register_[\w]+"
     bot_username = "dashu660_bot"
     notify_create_name = True
-    additional_auth = ["prime"]
 
     async def on_trigger(self, message: Message, key, reply):
         wr = async_partial(self.client.wait_reply, self.bot_username)

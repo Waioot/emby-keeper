@@ -32,7 +32,6 @@ class TemplateBMessagerConfig(BaseModel):
 
 
 class TemplateBMessager(SmartMessager):
-    additional_auth = ["prime"]
 
     async def init(self):
         try:

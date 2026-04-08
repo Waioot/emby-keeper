@@ -11,7 +11,6 @@ from embykeeper.runinfo import RunStatus
 from embykeeper.utils import remove_prefix, get_proxy_str, show_exception
 from embykeeper.config import config
 
-from ..link import Link
 from . import BotCheckin
 
 __ignore__ = True
@@ -21,6 +20,7 @@ class NebulaCheckin(BotCheckin):
     name = "Nebula"
     bot_username = "Nebula_Account_bot"
     max_retries = 1
+    unsupported_reason = "旧版 Nebula 依赖已移除的远程验证码能力，当前阶段已跳过。"
 
     async def send_checkin(self, **kw):
         bot_peer = await self.client.resolve_peer(self.bot_username)
@@ -36,12 +36,10 @@ class NebulaCheckin(BotCheckin):
         scheme = urlparse(url_base)
         query = parse_qs(scheme.query, keep_blank_values=True)
         query = {k: v for k, v in query.items() if not k.startswith("tgWebApp")}
-        token = await Link(self.client).captcha("nebula")
-        if not token:
-            self.log.warning("签到失败: 无法获得验证码.")
-            return await self.fail(message="验证码获取失败")
+        self.log.warning(self.unsupported_reason)
+        return await self.fail(message="验证码获取失败")
         useragent = Faker().safari()
-        query["token"] = token
+        query["token"] = ""
         url_checkin = scheme._replace(query=urlencode(query, True)).geturl()
         proxy = get_proxy_str(config.proxy)
         try:

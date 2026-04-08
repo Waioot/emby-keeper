@@ -1,6 +1,7 @@
 import asyncio
 
-from ..link import Link
+from embykeeper.llm.text import infer_text
+
 from ..lock import pornfans_alert, pornfans_messager_mids_lock, pornfans_messager_mids
 from . import BotCheckin
 
@@ -10,7 +11,7 @@ __ignore__ = True
 class PornfansGameGroupCheckin(BotCheckin):
     name = "PornFans 游戏群发言"
     chat_name = "embytestflight"
-    additional_auth = ["pornemby_pack"]
+    required_capabilities = ["llm.text"]
     bot_use_captcha = False
 
     async def send_checkin(self, retry=False):
@@ -27,7 +28,7 @@ class PornfansGameGroupCheckin(BotCheckin):
                 "表示的意思是 '发言换取答题资格', 你可以口语化一点, 像真人会说的话, 或者有水群一下的意思."
                 "必须严格遵守字数要求！禁止输出逗号句号, 开头必须有标号'@@@' (不计入字数)",
             )
-            answer, by = await Link(self.client).gpt(prompt)
+            answer, by = await infer_text(prompt, self.client, log=self.log)
             if not answer:
                 continue
 

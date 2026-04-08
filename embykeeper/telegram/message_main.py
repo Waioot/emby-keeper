@@ -11,7 +11,6 @@ from embykeeper.runinfo import RunContext
 
 from .messager import Messager
 from .dynamic import extract, get_cls, get_names
-from .link import Link
 from .session import ClientsSession
 from .pyrogram import Client
 
@@ -93,9 +92,6 @@ class MessageManager:
         if not clses:
             if site is not None:  # Only show warning if sites were specified but none were valid
                 log.warning("没有任何有效自动水群站点, 自动水群将跳过.")
-            return
-
-        if not await Link(client).auth("messager", log_func=log.error):
             return
 
         messagers = []

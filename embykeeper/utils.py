@@ -125,15 +125,18 @@ class AsyncTaskPool:
         self.tasks = []
 
     def add(self, coro: Coroutine, name: str = None):
+        task = asyncio.create_task(coro)
+
         async def wrapper():
-            task = asyncio.ensure_future(coro)
-            await asyncio.wait([task])
-            async with self.waiter:
-                self.waiter.notify()
+            try:
                 return await task
+            finally:
+                async with self.waiter:
+                    self.waiter.notify()
 
         t = asyncio.create_task(wrapper())
-        t.set_name(name or coro.__name__)
+        task_name = name or getattr(coro, "__name__", coro.__class__.__name__)
+        t.set_name(task_name)
         self.tasks.append(t)
         return t
 

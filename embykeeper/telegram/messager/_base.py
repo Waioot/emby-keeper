@@ -17,6 +17,7 @@ from pydantic import BaseModel, Field, ValidationError
 from thefuzz import fuzz
 
 from embykeeper import __name__ as __product__
+from embykeeper.capabilities import check_capabilities, format_missing_capabilities
 from embykeeper.data import get_data
 from embykeeper.var import debug
 from embykeeper.utils import show_exception, to_iterable, truncate_str, distribute_numbers
@@ -25,7 +26,6 @@ from embykeeper.config import config
 from embykeeper.schema import TelegramAccount
 
 from ..session import ClientsSession
-from ..link import Link
 
 __ignore__ = True
 
@@ -87,7 +87,8 @@ class Messager:
     name: str = None  # 水群器名称
     chat_name: str = None  # 群聊的名称
     default_messages: List[Union[str, MessageSchedule]] = []  # 默认的话术列表资源名
-    additional_auth: List[str] = []  # 额外认证要求
+    required_capabilities: List[str] = []  # 运行所需的本地能力
+    unsupported_reason: Optional[str] = None  # 当前阶段不支持的原因
     min_interval: int = None  # 发送最小间隔 (秒)
     max_interval: int = None  # 发送最大间隔 (秒)
     at: Optional[List[str]] = None  # 时间区间, 例如 ["5:00AM", "9:00PM"]
@@ -265,12 +266,18 @@ class Messager:
         """自动水群器的入口函数."""
         self.ctx.start(RunStatus.INITIALIZING)
 
-        if self.additional_auth:
-            async with ClientsSession([self.account]) as clients:
-                async for _, tg in clients:
-                    for a in self.additional_auth:
-                        if not await Link(tg).auth(a, log_func=self.log.info):
-                            return False
+        if self.unsupported_reason:
+            self.log.info(f"初始化信息: {self.unsupported_reason}")
+            self.ctx.finish(RunStatus.IGNORE, "当前阶段不支持")
+            return False
+
+        ok, missing = check_capabilities(self.required_capabilities, self.account)
+        if not ok:
+            self.log.info(
+                f"初始化信息: 缺少本地能力 {format_missing_capabilities(missing)}, 已跳过当前任务."
+            )
+            self.ctx.finish(RunStatus.IGNORE, "缺少本地能力")
+            return False
 
         if self.max_interval and self.min_interval > self.max_interval:
             self.log.warning(f"发生错误: 最小间隔不应大于最大间隔, 自动水群将停止.")

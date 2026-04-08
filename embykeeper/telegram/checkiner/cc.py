@@ -2,11 +2,11 @@ import asyncio
 import random
 import string
 
+from embykeeper.llm.ocr import solve_captcha
 from thefuzz import process
 from pyrogram.types import Message
 from pyrogram.errors import MessageIdInvalid
 
-from ..link import Link
 from . import BotCheckin
 
 
@@ -17,7 +17,7 @@ class CCCheckin(BotCheckin):
     bot_checked_keywords = ["已经签到过了"]
     bot_checkin_caption_pat = "请选择正确验证码"
     max_retries = 1
-    additional_auth = ["ocr"]
+    required_capabilities = ["llm.ocr"]
 
     async def message_handler(self, client, message: Message):
         if message.caption and "欢迎使用" in message.caption and message.reply_markup:
@@ -40,12 +40,12 @@ class CCCheckin(BotCheckin):
         if not message.reply_markup:
             return
         for i in range(3):
-            result: str = await Link(self.client).ocr(message.photo.file_id)
+            result, _ = await solve_captcha(self.client, message.photo.file_id, log=self.log)
             if result:
-                self.log.debug(f"远端已解析答案: {result}.")
+                self.log.debug(f"已解析答案: {result}.")
                 break
             else:
-                self.log.warning(f"远端解析失败, 正在重试解析 ({i + 1}/3).")
+                self.log.warning(f"识别失败, 正在重试解析 ({i + 1}/3).")
         else:
             self.log.warning(f"签到失败: 验证码识别错误.")
             return await self.fail()
@@ -53,7 +53,7 @@ class CCCheckin(BotCheckin):
         result = result.translate(str.maketrans("", "", string.punctuation)).replace(" ", "")
         captcha, score = process.extractOne(result, options)
         if score < 50:
-            self.log.warning(f"远端答案难以与可用选项相匹配 (分数: {score}/100).")
+            self.log.warning(f"大模型答案难以与可用选项相匹配 (分数: {score}/100).")
         self.log.debug(f"[gray50]接收验证码: {captcha}.[/]")
         await asyncio.sleep(random.uniform(2, 4))
         try:

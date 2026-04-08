@@ -15,12 +15,12 @@ from pyrogram.handlers import EditedMessageHandler, MessageHandler
 from pyrogram.types import Message, User
 
 from embykeeper import __name__ as __product__
+from embykeeper.capabilities import check_capabilities, format_missing_capabilities
 from embykeeper.utils import show_exception, to_iterable, truncate_str, AsyncCountPool, optional
 from embykeeper.config import config
 from embykeeper.runinfo import RunContext, RunStatus
 
 from ..pyrogram import Client
-from ..link import Link
 
 __ignore__ = True
 
@@ -121,7 +121,8 @@ class Monitor:
     trigger_interval: float = 2  # 每次触发的最低时间间隔
     trigger_sim: int = 1  # 同时触发的最大并行数
     trigger_max_time: float = 120  # 触发后处理的最长时间
-    additional_auth: List[str] = []  # 额外认证要求
+    required_capabilities: List[str] = []  # 运行所需的本地能力
+    unsupported_reason: Optional[str] = None  # 当前阶段不支持的原因
     debug_no_log = False  # 调试模式不显示冗余日志
     allow_caption: bool = True  # 是否允许带照片的消息
     allow_text: bool = True  # 是否允许不带照片的消息
@@ -200,6 +201,17 @@ class Monitor:
     async def start(self):
         """监控器的入口函数."""
         self.ctx.start(RunStatus.INITIALIZING)
+        if self.unsupported_reason:
+            self.log.info(f"初始化信息: {self.unsupported_reason}")
+            return self.ctx.finish(RunStatus.IGNORE, "当前阶段不支持")
+
+        ok, missing = check_capabilities(self.required_capabilities, self.client)
+        if not ok:
+            self.log.info(
+                f"初始化信息: 缺少本地能力 {format_missing_capabilities(missing)}, 已跳过当前任务."
+            )
+            return self.ctx.finish(RunStatus.IGNORE, "缺少本地能力")
+
         if self.init_first:
             if not await self.init():
                 self.log.bind(log=True).warning(f"机器人状态初始化失败, 监控将停止.")
@@ -245,11 +257,6 @@ class Monitor:
                     chats.append(chat)
 
         self.chat_name = [chat.id for chat in chats]
-
-        if self.additional_auth:
-            for a in self.additional_auth:
-                if not await Link(self.client).auth(a, log_func=self.log.info):
-                    return self.ctx.finish(RunStatus.IGNORE, "需要额外认证")
 
         if not self.init_first:
             if not await self.init():
