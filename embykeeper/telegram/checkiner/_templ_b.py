@@ -4,7 +4,7 @@ from typing import Iterable, List, Optional, Union
 from loguru import logger
 from pydantic import BaseModel, ValidationError
 
-from embykeeper.ocr import CharRange
+from embykeeper.llm.ocr import CharRange
 from embykeeper.utils import to_iterable
 
 from . import BotCheckin
@@ -41,7 +41,6 @@ class TemplateBCheckinConfig(BaseModel):
 
 class TemplateBCheckin(BotCheckin):
     init_first = True
-    additional_auth = ["prime"]
 
     async def init(self):
         try:

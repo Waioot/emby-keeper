@@ -188,7 +188,6 @@ class EmbyAccount(ConfigModel):
     device_id: Optional[str] = None
     allow_multiple: Optional[bool] = True
     allow_stream: Optional[bool] = False
-    cf_challenge: Optional[bool] = True
     use_proxy: Optional[bool] = True
     play_id: Optional[str] = None
     enabled: Optional[bool] = True

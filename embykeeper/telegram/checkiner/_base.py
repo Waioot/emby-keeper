@@ -27,13 +27,14 @@ from pyrogram.raw.types import PeerNotifySettings, InputNotifyPeer
 from thefuzz import fuzz, process
 
 from embykeeper import __name__ as __product__
-from embykeeper.ocr import CharRange, OCRService
+from embykeeper.capabilities import check_capabilities, format_missing_capabilities
+from embykeeper.llm.text import infer_text
+from embykeeper.llm.ocr import CharRange, OCRService
 from embykeeper.runinfo import RunContext
-from embykeeper.utils import show_exception, to_iterable, format_timedelta_human, AsyncCountPool
+from embykeeper.utils import show_exception, to_iterable, format_timedelta_human, AsyncCountPool, truncate_str
 from embykeeper.config import config
 from embykeeper.runinfo import RunStatus
 from embykeeper.telegram.pyrogram import Client
-from embykeeper.telegram.link import Link
 
 __ignore__ = True
 
@@ -173,7 +174,8 @@ class BotCheckin(BaseBotCheckin):
     bot_too_many_tries_fail_keywords: Union[str, List[str]] = []  # 过多尝试将退出时检测的关键词 (暂不支持regex), 置空使用内置关键词表
     bot_fail_keywords: Union[str, List[str]] = []  # 签到错误将重试时检测的关键词 (暂不支持regex), 置空使用内置关键词表
     chat_name: str = None  # 在群聊中向机器人签到
-    additional_auth: List[str] = []  # 额外认证要求
+    required_capabilities: List[str] = []  # 运行所需的本地能力
+    unsupported_reason: Optional[str] = None  # 当前阶段不支持的原因
     max_retries = None  # 验证码错误或网络错误时最高重试次数 (默认无限)
     checked_retries = None # 今日已签到时最高重试次数 (默认不重试)
     init_first: bool = False  # 先执行自定义初始化函数, 再进行加入群组分析
@@ -241,6 +243,17 @@ class BotCheckin(BaseBotCheckin):
 
         self.ctx.start(RunStatus.INITIALIZING)
 
+        if self.unsupported_reason:
+            self.log.info(f"初始化信息: {self.unsupported_reason}")
+            return self.ctx.finish(RunStatus.IGNORE, "当前阶段不支持")
+
+        ok, missing = check_capabilities(self.required_capabilities, self.client)
+        if not ok:
+            self.log.info(
+                f"初始化信息: 缺少本地能力 {format_missing_capabilities(missing)}, 已跳过当前任务."
+            )
+            return self.ctx.finish(RunStatus.IGNORE, "缺少本地能力")
+
         if self.init_first:
             if not await self.init():
                 self.log.warning(f"初始化错误.")
@@ -283,11 +296,6 @@ class BotCheckin(BaseBotCheckin):
                 return self.ctx.finish(RunStatus.IGNORE, "从未与该会话交流")
 
         while True:
-            if self.additional_auth:
-                for a in self.additional_auth:
-                    if not await Link(self.client).auth(a, log_func=self.log.info):
-                        return self.ctx.finish(RunStatus.IGNORE, "需要额外认证")
-
             if not self.init_first:
                 if not await self.init():
                     self.log.warning(f"初始化错误.")
@@ -524,36 +532,51 @@ class BotCheckin(BaseBotCheckin):
     async def on_photo(self, message: Message):
         """分析传入的验证码图片并返回验证码."""
         data = await self.client.download_media(message, in_memory=True)
+        provider_label = OCRService.get_provider_label()
         ocr = await OCRService.get(
             ocr_name=self.ocr,
             char_range=self.bot_captcha_char_range,
         )
+        failure_reason = "empty"
+        failure_detail = None
+        captcha = None
 
         try:
             with ocr:
                 is_gif = getattr(data, "name", "").endswith(".gif")
+                self.log.info(f"正在使用{provider_label}识别验证码.")
                 ocr_text = await ocr.run(data, gif=is_gif)
-                if not ocr_text:
-                    self.log.info(f"签到失败: 接收到空验证码, 正在重试.")
-                    await self.retry()
-                    return
-
-                captcha = ocr_text.translate(str.maketrans("", "", string.punctuation)).replace(" ", "")
-
-            if captcha:
-                self.log.debug(f"[gray50]接收验证码: {captcha}.[/]")
-                if self.bot_captcha_len and len(captcha) not in to_iterable(self.bot_captcha_len):
-                    self.log.info(f"签到失败: 验证码低于设定长度, 正在重试.")
-                    await self.retry()
+                if ocr_text:
+                    candidate = ocr_text.translate(str.maketrans("", "", string.punctuation)).replace(" ", "")
+                    if candidate:
+                        self.log.info(f"{provider_label}识别结果: {candidate}.")
+                        if self.bot_captcha_len and len(candidate) not in to_iterable(self.bot_captcha_len):
+                            failure_reason = "short"
+                            failure_detail = candidate
+                        else:
+                            captcha = candidate
+                    else:
+                        failure_reason = "empty"
+                        self.log.warning(f"{provider_label}返回空结果.")
                 else:
-                    await asyncio.sleep(random.uniform(2, 4))
-                    await self.on_captcha(message, captcha)
-            else:
-                self.log.info(f"签到失败: 接收到空验证码, 正在重试.")
-                await self.retry()
+                    self.log.warning(f"{provider_label}返回空结果.")
         except asyncio.TimeoutError:
-            self.log.info("签到失败: 验证码识别失败, 正在重试.")
-            await self.retry()
+            failure_reason = "timeout"
+            self.log.warning(f"{provider_label}请求超时.")
+        except Exception as e:
+            failure_reason = "error"
+            failure_detail = truncate_str(str(e), 120)
+            self.log.warning(f"{provider_label}请求失败: {failure_detail}.")
+
+        if captcha:
+            self.log.debug(f"[gray50]接收验证码: {captcha}.[/]")
+            await asyncio.sleep(random.uniform(2, 4))
+            await self.on_captcha(message, captcha)
+        else:
+            if failure_reason == "short" and failure_detail:
+                self.log.warning(f"{provider_label}识别结果长度不符: {failure_detail}.")
+            self.log.warning("签到失败: 验证码识别失败, 跳过当前账号.")
+            await self.fail(message="验证码识别失败")
             return
 
     async def on_captcha(self, message: Message, captcha: str):
@@ -652,7 +675,7 @@ class BotCheckin(BaseBotCheckin):
                 "如果这是一个状态, 请输出 [IS_STATUS], 禁止输出其他内容."
             )
             for _ in range(3):
-                answer, by = await Link(self.client).gpt(prompt)
+                answer, by = await infer_text(prompt, self.client, log=self.log, profile_name="default")
                 if answer:
                     self.log.debug(f"智能回答 ({by}): {answer}")
                     if "[NO_RESP]" in answer:

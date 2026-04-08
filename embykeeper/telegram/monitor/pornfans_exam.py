@@ -15,13 +15,14 @@ from embykeeper.utils import show_exception, get_proxy_str
 from ..lock import pornfans_alert
 from . import Monitor
 
+__ignore__ = True
+
 JAVDATABASE_URL = "https://www.javdatabase.com"
 
 
 class _PornfansExamResultMonitor(Monitor):
     name = "PornFans 科举答案"
     chat_keyword = r"问题\d*：(.*?)\n+答案为：([ABCD])\n+([A-Z-\d]+)"
-    additional_auth = ["pornemby_pack"]
     allow_edit = True
 
     async def on_trigger(self, message: Message, key, reply):
@@ -34,7 +35,6 @@ class _PornfansExamAnswerMonitor(Monitor):
     chat_keyword = (
         r"问题\d*：根据以上封面图, 猜猜是什么番号？\n+A:(.*)\n+B:(.*)\n+C:(.*)\n+D:(.*)\n(?!\n*答案)"
     )
-    additional_auth = ["pornemby_pack"]
     allow_edit = True
 
     key_map = {
@@ -44,31 +44,9 @@ class _PornfansExamAnswerMonitor(Monitor):
         "D": ["D", "🅳"],
     }
 
-    async def use_cfsolver(self):
-        from embykeeper.cloudflare import get_cf_clearance
-
-        if self.proxy:
-            if self.proxy.scheme != "socks5":
-                self.log.warning(f"站点验证解析仅支持 SOCKS5 代理, 由于当前代理协议不支持, 将尝试不使用代理.")
-                self.proxy = None
-            else:
-                self.log.info(
-                    f"验证码解析将使用代理, 可能导致解析失败, 若失败请使用"
-                    '"use_proxy = false" 以禁用该站点的代理.'
-                )
-        try:
-            cf_clearance, useragent = await get_cf_clearance(JAVDATABASE_URL, self.proxy)
-            if not cf_clearance:
-                self.log.warning(f"Cloudflare 验证码解析失败.")
-                return False
-            else:
-                self.cf_clearance = cf_clearance
-                self.useragent = useragent
-                return True
-        except Exception as e:
-            self.log.warning(f"Cloudflare 验证码解析时出现错误.")
-            show_exception(e, regular=False)
-            return False
+    async def _skip_cloudflare_protected_site(self):
+        self.log.warning("科举辅助已停用，不再使用 Cloudflare 远程求解。")
+        return False
 
     async def init(self):
         self.proxy = config.proxy
@@ -100,7 +78,7 @@ class _PornfansExamAnswerMonitor(Monitor):
                             self.log.warning("初始化失败: Javdatabase 在 Cloudflare 验证码解析后依然有验证")
                             return False
                         self.log.info("Javdatabase 存在 Cloudflare 保护, 正在尝试解析.")
-                        await self.use_cfsolver()
+                        await self._skip_cloudflare_protected_site()
                         continue
                     elif not resp.ok:
                         self.log.warning(f"初始化失败: Javdatabase 返回状态码错误: {resp.status_code}.")

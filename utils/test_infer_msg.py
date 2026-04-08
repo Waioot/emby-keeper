@@ -4,12 +4,25 @@ import yaml
 
 from embykeeper.telegram.session import ClientsSession
 from embykeeper.telegram.pyrogram import Client
-from embykeeper.telegram.link import Link
-from embykeeper.cli import AsyncTyper, truncate_str
+from embykeeper.cli import AsyncTyper
 from embykeeper.config import config
+from embykeeper.llm.text import infer_text
+from embykeeper.utils import truncate_str
 
 
 app = AsyncTyper()
+
+
+def _build_payload_text(payload: dict) -> str:
+    return yaml.safe_dump(payload, allow_unicode=True, sort_keys=False)
+
+
+async def _call_llm_text(payload: dict):
+    prompt = "请根据下面的上下文和语料, 生成一个合理回复或推断结果:\n\n" + _build_payload_text(payload)
+    result, model = await infer_text(prompt)
+    if model:
+        return f"[{model}] {result}"
+    return result
 
 
 async def call_infer(tg: Client, url: str = None, analyze: Path = None):
@@ -56,11 +69,8 @@ async def call_infer(tg: Client, url: str = None, analyze: Path = None):
     if messages:
         payload["messages"] = messages
 
-    print(payload)
-
-    answer, _ = await Link(tg).infer(payload)
-
-    return answer
+    print(_build_payload_text(payload))
+    return await _call_llm_text(payload)
 
 
 @app.async_command()

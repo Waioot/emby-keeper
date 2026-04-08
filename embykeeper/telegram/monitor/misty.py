@@ -4,7 +4,7 @@ import string
 
 from pyrogram.types import Message
 
-from embykeeper.ocr import OCRService
+from embykeeper.llm.ocr import OCRService
 from embykeeper.utils import async_partial, nonblocking
 
 from ..lock import misty_locks
@@ -22,7 +22,6 @@ class MistyMonitor(Monitor):
     chat_keyword = r"空余名额数: (?!0$)"
     bot_username = "EmbyMistyBot"
     notify_create_name = True
-    additional_auth = ["prime"]
 
     async def init(self, initial=True, force_lock=True):
         misty_monitor_pool[self.client.me.id] = self
@@ -49,7 +48,7 @@ class MistyMonitor(Monitor):
                             try:
                                 with ocr:
                                     ocr_text = await ocr.run(data)
-                            except asyncio.TimeoutError:
+                            except Exception:
                                 self.log.info(f"机器人状态初始化失败, 正在重试.")
                                 continue
                             self.captcha = ocr_text.translate(
