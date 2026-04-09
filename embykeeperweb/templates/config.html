@@ -127,11 +127,11 @@
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-              <p class="mx-3">若您设置了 Telegram 账号, 请回到<a href="{{ prefix }}/console">控制台</a>并点击右上方的重启按钮以登陆各账号.</p>
+              <p class="mx-3">配置已经写入本机文件. 如需立即生效, 请回到<a href="{{ prefix }}/console">控制台</a>执行一次或开启定时.</p>
               <hr>
-              <p class="mx-3">否则, 请将下方内容写入托管平台的 <span class="text-info cursor-pointer" id="env-name">EK_CONFIG</span> 环境变量, 否则配置将在重启后丢失.</p>
+              <p class="mx-3">当前配置文件位置:</p>
               <div id="modal-data-box" class="mx-3 my-3 p-3 cursor-pointer">
-                <code class="text-dark" id="modal-data"></code>
+                <code class="text-dark" id="modal-data">{{ config_path }}</code>
               </div>
             </div>
           </div>

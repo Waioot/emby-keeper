@@ -20,26 +20,15 @@ window.addEventListener('DOMContentLoaded', function() {
         statusMsgBadge.classList.remove("d-none");
         axios.post(basePrefix + '/config/save', {"config": editor.getDoc().getValue()})
             .then(function(response) {
-                const modalBody = document.querySelector('.modal-body');
-                if (response.data) {
-                    document.getElementById('modal-data').textContent = response.data;
-                    modalBody.children[0].style.display = 'none';  // Hide Telegram message
-                    modalBody.children[1].style.display = 'block'; // Show hr
-                    modalBody.children[2].style.display = 'block'; // Show env var message
-                    modalBody.children[3].style.display = 'block'; // Show copy box
-                } else {
-                    modalBody.children[0].style.display = 'block'; // Show Telegram message
-                    modalBody.children[1].style.display = 'none';  // Hide hr
-                    modalBody.children[2].style.display = 'none';  // Hide env var message
-                    modalBody.children[3].style.display = 'none';  // Hide copy box
-                }
+                document.getElementById('modal-data').textContent = response.data.path || '';
                 var saveModal = new bootstrap.Modal(document.getElementById('saveModal'));
                 saveModal.show();
+                statusMsg.innerText = response.data.message || '保存完成';
                 statusMsgBadge.classList.add("d-none");
             })
             .catch(function(error) {
                 console.error(error);
-                statusMsg.innerText = '保存失败, 请检查您的网络并重试';
+                statusMsg.innerText = error.response?.data?.error || '保存失败, 请检查您的网络并重试';
             });
     });
     document.getElementById('example-btn').addEventListener('click', function() {
@@ -93,10 +82,6 @@ window.addEventListener('DOMContentLoaded', function() {
             showCopyTooltip('复制失败', event);
         });
     }
-
-    document.getElementById('env-name').addEventListener('click', function(e) {
-        copyText('EK_CONFIG', e);
-    });
 
     document.getElementById('modal-data-box').addEventListener('click', function(e) {
         const modalData = document.getElementById('modal-data').textContent;
