@@ -45,7 +45,10 @@ content-type = "text/markdown"
 
 [project.scripts]
 embykeeper = "embykeeper.cli:app"
+embykeeper-cli = "embykeeper.cli:app"
+embykeeper-xigua-url = "embykeeper.xigua_url_cli:run"
 embykeeperweb = "embykeeperweb.app:cli"
+embykeeper-web = "embykeeperweb.app:cli"
 
 [tool.setuptools]
 zip-safe = false

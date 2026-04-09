@@ -16,6 +16,7 @@ import termios
 import threading
 import time
 import signal
+from pathlib import Path
 
 import tomlkit
 import typer
@@ -34,6 +35,7 @@ except ImportError:
 from embykeeper.config import config as ek_config
 from embykeeper.cache import cache as ek_cache
 from embykeeper.schema import Config
+from embykeeper.xigua_result import load_xigua_result
 
 from . import __version__
 
@@ -101,6 +103,32 @@ def is_authenticated():
         return True
     else:
         return False
+
+
+def is_xigua_api_authenticated():
+    token = os.environ.get("EK_XIGUA_API_TOKEN", "").strip()
+    if not token:
+        return is_authenticated()
+
+    request_token = (
+        request.headers.get("X-Xigua-Api-Token", "").strip() or request.args.get("token", "").strip()
+    )
+    return request_token == token
+
+
+def get_runtime_basedir() -> Path:
+    env_basedir = os.environ.get("EK_BASEDIR", "").strip()
+    if env_basedir:
+        return Path(env_basedir).expanduser()
+
+    args = app.config.get("args", []) or []
+    for idx, arg in enumerate(args):
+        if arg in ("-B", "--basedir") and idx + 1 < len(args):
+            return Path(args[idx + 1]).expanduser()
+        if arg.startswith("--basedir="):
+            return Path(arg.split("=", 1)[1]).expanduser()
+
+    return ek_config.basedir
 
 
 @bp.route("/console")
@@ -197,6 +225,15 @@ def heartbeat():
         return jsonify({"status": "restarted", "pid": app.config["proc"].pid}), 201
     else:
         return jsonify({"status": "running", "pid": app.config["proc"].pid}), 200
+
+
+@bp.route("/api/xigua/latest", methods=["GET"])
+def xigua_latest():
+    if not is_xigua_api_authenticated():
+        return jsonify({"ok": False, "error": "Unauthorized"}), 401
+
+    payload = load_xigua_result(get_runtime_basedir())
+    return jsonify(payload), 200
 
 
 @app.errorhandler(404)

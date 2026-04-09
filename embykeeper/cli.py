@@ -116,6 +116,53 @@ def get_log_dir(basedir: Path | None = None) -> Path:
         return fallback
 
 
+def _exclude_xigua_site_names(site_names):
+    if site_names is None:
+        return None
+
+    normalized = []
+    has_all = False
+    has_exclusion = False
+
+    for name in site_names:
+        stripped = name.strip()
+        lowered = stripped.lower()
+        if lowered == "all":
+            has_all = True
+            normalized.append(stripped)
+            continue
+        if lowered == "xigua":
+            continue
+        if lowered == "-xigua":
+            has_exclusion = True
+        normalized.append(stripped)
+
+    if has_all and not has_exclusion:
+        normalized.append("-xigua")
+
+    return normalized
+
+
+def _prepare_xigua_url_mode():
+    from .schema import SiteConfig
+
+    if config.site is None:
+        config.site = SiteConfig(checkiner=["all", "-xigua"])
+    else:
+        sites = _exclude_xigua_site_names(config.site.checkiner)
+        if sites is None:
+            config.site.checkiner = ["all", "-xigua"]
+        else:
+            config.site.checkiner = sites
+
+    for account in config.telegram.account or []:
+        if not account.enabled or not account.checkiner:
+            continue
+        if account.site is None or account.site.checkiner is None:
+            continue
+        account.site.checkiner = _exclude_xigua_site_names(account.site.checkiner)
+
+
 @app.async_command(
     help=(
         f"欢迎使用 [orange3]{__product__.capitalize()}[/] {__version__} " ":cinema: 无参数默认开启核心功能."
@@ -317,6 +364,13 @@ async def main(
         rich_help_panel="调试工具",
         help="显示或清理 Emby 模拟设备和登陆凭据等缓存",
     ),
+    xigua_url: bool = typer.Option(
+        False,
+        "--xigua-url",
+        "-x",
+        rich_help_panel="调试工具",
+        help="在一次性任务结束后输出一条新的西瓜签到链接",
+    ),
 ):
     from .log import initialize, apply_logging_adapter
 
@@ -388,6 +442,10 @@ async def main(
         config.debug_cron = True
         logger.warning("您当前处于计划任务调试模式, 将在 10 秒后运行计划任务.")
     config.noexit = noexit
+
+    if xigua_url:
+        _prepare_xigua_url_mode()
+        logger.info("已启用西瓜签到链接提取模式，普通签到阶段将跳过西瓜站点。")
 
     if not checkiner and not emby and not subsonic:
         checkiner = True
@@ -476,6 +534,9 @@ async def main(
 
         return await debug_notifier()
 
+    if xigua_url and not instant:
+        logger.warning("启用西瓜签到链接输出时，建议同时使用 --instant。")
+
     try:
         streams = None
         checkin_man = None
@@ -534,6 +595,16 @@ async def main(
                         raise
                 else:
                     logger.debug(f"任务 {t.get_name()} 成功结束.")
+
+            if xigua_url:
+                from .xigua_url_cli import fetch_xigua_checkin_url_from_config, save_xigua_result
+
+                logger.info("正在提取西瓜签到链接.")
+                try:
+                    print(await fetch_xigua_checkin_url_from_config())
+                except Exception as e:
+                    save_xigua_result(error=str(e))
+                    raise
         finally:
             if streams:
                 await logger.complete()
