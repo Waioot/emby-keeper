@@ -25,7 +25,7 @@ Embykeeper 是一个专注于 Emby 影视服务器的自动化工具, 主要保�
 ::: tip 快速安装
 希望安装 Embykeeper? 请前往 [**🚀 安装指南**](/guide/安装指南.md).
 
-如果您使用 Linux 或 Debian 服务器, 推荐直接走 [**🐳 Docker 一键部署**](/guide/Debian-Web-部署.md).
+如果您使用 Linux 或 Debian 服务器, 推荐直接走 [**🐳 本地构建 Docker 部署**](/guide/Debian-Web-部署.md).
 :::
 
 ## 设计初衷与声明

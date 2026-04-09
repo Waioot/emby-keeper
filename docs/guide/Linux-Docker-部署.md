@@ -1,26 +1,37 @@
-# Docker 一键部署
+# Linux Docker 部署
 
 ## 这是什么
 
-这条路最简单。
+这条路适合自己管服务器的人。
 
-你只做三件事：
+你不需要公开镜像。
 
-1. 启动 Docker 容器
-2. 打开网页保存配置
-3. 在网页里执行一次或者开启定时
+你只做这几步：
 
-## 一键启动
+1. 克隆仓库
+2. 本地构建镜像
+3. 启动容器
+4. 打开网页配置和运行
 
-先准备数据目录：
+## 克隆仓库
 
 ```bash
-mkdir -p /opt/embykeeper-deploy
+mkdir -p /opt/embykeeper
+cd /opt/embykeeper
+git clone https://github.com/emby-keeper/emby-keeper.git
+cd emby-keeper
 ```
 
-再启动容器：
+## 构建镜像
 
 ```bash
+docker build -t embykeeper-local .
+```
+
+## 启动容器
+
+```bash
+mkdir -p /opt/embykeeper-data
 docker rm -f embykeeper >/dev/null 2>&1 || true
 
 docker run -d \
@@ -29,21 +40,19 @@ docker run -d \
   -p 1818:1818 \
   -e TZ=Asia/Shanghai \
   -e EK_XIGUA_API_TOKEN='请改成你自己的接口密钥' \
-  -v /opt/embykeeper-deploy:/app \
-  embykeeper/embykeeper
+  -v /opt/embykeeper-data:/app \
+  embykeeper-local
 ```
 
 默认网页登录密码是 `embykeeper`。
 
-如果你要改密码，就额外加上：
+如果你要改密码，就多加一项：
 
 ```bash
 -e EK_WEBPASS='你自己的新密码'
 ```
 
 ## 打开网页
-
-浏览器打开：
 
 ```text
 http://你的服务器IP:1818
@@ -74,7 +83,9 @@ docker logs -f embykeeper
 ## 升级
 
 ```bash
-docker pull embykeeper/embykeeper
+cd /opt/embykeeper/emby-keeper
+git pull
+docker build -t embykeeper-local .
 docker rm -f embykeeper
 
 docker run -d \
@@ -83,6 +94,6 @@ docker run -d \
   -p 1818:1818 \
   -e TZ=Asia/Shanghai \
   -e EK_XIGUA_API_TOKEN='请改成你自己的接口密钥' \
-  -v /opt/embykeeper-deploy:/app \
-  embykeeper/embykeeper
+  -v /opt/embykeeper-data:/app \
+  embykeeper-local
 ```

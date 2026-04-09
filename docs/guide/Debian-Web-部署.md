@@ -1,43 +1,74 @@
-# Debian Docker 一键部署
+# Debian 本地构建 Docker 部署
 
 ## 这是什么
 
 这篇文档只教一条路。
 
-- 用 Docker 跑 `embykeeper`
-- 自动进入网页模式
-- 在网页里写 `config.toml`
+- 在服务器上克隆仓库
+- 在服务器上本地构建镜像
+- 用这个本地镜像启动 Web
+- 在网页里保存 `config.toml`
 - 在网页里点“执行一次”或者“开启定时”
-- 用接口拿西瓜链接
 
-你不用自己配 systemd。
+镜像不会推到公开环境。
 
-你不用自己跑二进制。
+## 先安装 Docker 和 Git
 
-## 先安装 Docker
-
-在 Debian 服务器里执行下面这组命令。
+在 Debian 服务器里执行：
 
 ```bash
 sudo apt update
-sudo apt install -y ca-certificates curl
+sudo apt install -y ca-certificates curl git
 curl -fsSL https://get.docker.com | sudo sh
 sudo systemctl enable --now docker
 ```
 
-## 一键启动
+## 克隆仓库
 
-直接执行这一条命令。
+执行下面这组命令：
 
 ```bash
-mkdir -p /opt/embykeeper-deploy && docker rm -f embykeeper >/dev/null 2>&1 || true && docker run -d \
+mkdir -p /opt/embykeeper
+cd /opt/embykeeper
+git clone https://github.com/emby-keeper/emby-keeper.git
+cd emby-keeper
+```
+
+## 本地构建镜像
+
+执行：
+
+```bash
+docker build -t embykeeper-local .
+```
+
+这一步会在你的服务器上生成一个本地镜像：
+
+```text
+embykeeper-local
+```
+
+## 启动容器
+
+先准备数据目录：
+
+```bash
+mkdir -p /opt/embykeeper-data
+```
+
+再启动容器：
+
+```bash
+docker rm -f embykeeper >/dev/null 2>&1 || true
+
+docker run -d \
   --name embykeeper \
   --restart unless-stopped \
   -p 1818:1818 \
   -e TZ=Asia/Shanghai \
   -e EK_XIGUA_API_TOKEN='请改成你自己的接口密钥' \
-  -v /opt/embykeeper-deploy:/app \
-  embykeeper/embykeeper
+  -v /opt/embykeeper-data:/app \
+  embykeeper-local
 ```
 
 默认网页登录密码是：
@@ -46,24 +77,26 @@ mkdir -p /opt/embykeeper-deploy && docker rm -f embykeeper >/dev/null 2>&1 || tr
 embykeeper
 ```
 
-如果你要改密码，就把命令改成这样：
+如果你要改密码，就用这条：
 
 ```bash
-mkdir -p /opt/embykeeper-deploy && docker rm -f embykeeper >/dev/null 2>&1 || true && docker run -d \
+docker rm -f embykeeper >/dev/null 2>&1 || true
+
+docker run -d \
   --name embykeeper \
   --restart unless-stopped \
   -p 1818:1818 \
   -e TZ=Asia/Shanghai \
   -e EK_WEBPASS='你自己的新密码' \
   -e EK_XIGUA_API_TOKEN='请改成你自己的接口密钥' \
-  -v /opt/embykeeper-deploy:/app \
-  embykeeper/embykeeper
+  -v /opt/embykeeper-data:/app \
+  embykeeper-local
 ```
 
-执行完以后，数据会放在这里：
+数据会放在这里：
 
 ```text
-/opt/embykeeper-deploy/
+/opt/embykeeper-data/
 ├── config.toml
 ├── logs/
 ├── runtime.json
@@ -78,8 +111,11 @@ mkdir -p /opt/embykeeper-deploy && docker rm -f embykeeper >/dev/null 2>&1 || tr
 http://你的服务器IP:1818
 ```
 
-登录密码就是刚才写进 `EK_WEBPASS` 的值。
-如果你没有自己改，那就是 `embykeeper`。
+如果你没有改密码，登录密码就是：
+
+```text
+embykeeper
+```
 
 ## 保存配置
 
@@ -92,7 +128,7 @@ http://你的服务器IP:1818
 点“保存配置”后，网页会直接写这个文件：
 
 ```text
-/opt/embykeeper-deploy/config.toml
+/opt/embykeeper-data/config.toml
 ```
 
 ## 执行一次
@@ -122,7 +158,7 @@ http://你的服务器IP:1818
 
 ## 获取西瓜链接
 
-你的 AI Agent 每天只要请求这个地址：
+你的 AI Agent 每天请求这个地址：
 
 ```bash
 curl -fsS "http://你的服务器IP:1818/api/xigua/latest?token=你自己的接口密钥"
@@ -147,15 +183,17 @@ docker logs -f embykeeper
 看西瓜最新结果：
 
 ```bash
-cat /opt/embykeeper-deploy/xigua/latest.json
+cat /opt/embykeeper-data/xigua/latest.json
 ```
 
 ## 升级
 
-执行这组命令：
+先更新仓库，再重新构建，再重启容器。
 
 ```bash
-docker pull embykeeper/embykeeper
+cd /opt/embykeeper/emby-keeper
+git pull
+docker build -t embykeeper-local .
 docker rm -f embykeeper
 
 docker run -d \
@@ -164,6 +202,6 @@ docker run -d \
   -p 1818:1818 \
   -e TZ=Asia/Shanghai \
   -e EK_XIGUA_API_TOKEN='请改成你自己的接口密钥' \
-  -v /opt/embykeeper-deploy:/app \
-  embykeeper/embykeeper
+  -v /opt/embykeeper-data:/app \
+  embykeeper-local
 ```
