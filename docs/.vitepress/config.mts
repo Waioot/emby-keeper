@@ -96,13 +96,8 @@ export default defineConfig({
             text: '🐧 Linux 安装',
             collapsed: true,
             items: [
-              { text: '🐳 Docker 部署', link: '/guide/Linux-Docker-部署' },
-              {
-                text: '📚 Docker Compose 部署',
-                link: '/guide/Linux-Docker-Compose-部署',
-              },
-              { text: '🏗️ 从源码构建', link: '/guide/Linux-从源码构建' },
-              { text: '📦 PyPI 安装', link: '/guide/Linux-从-PyPI-安装' },
+              { text: '🐳 Debian 本地构建 Docker 部署', link: '/guide/Debian-Web-部署' },
+              { text: '🐳 Linux Docker 部署', link: '/guide/Linux-Docker-部署' },
             ],
           },
           {

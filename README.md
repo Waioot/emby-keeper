@@ -35,19 +35,20 @@ Embykeeper 是一个专注于 Emby 影视服务器签到保号的自动执行工
 
 ## 安装与使用
 
-Embykeeper 支持 Docker 或 PyPI 安装 (Linux / Windows), 请点击下方按钮查看安装指南:
+Embykeeper 当前推荐使用本地构建 Docker 部署，请点击下方按钮查看安装指南:
 
 [![Setup Tutorial](https://github.com/emby-keeper/emby-keeper/raw/main/images/setup-button.svg)](https://emby-keeper.github.io/guide/安装指南)
 
-若您有服务器, 我们推荐使用 [Docker 部署](https://emby-keeper.github.io/guide/Linux-Docker-部署):
+若您有服务器, 我们推荐直接在服务器克隆仓库后本地构建镜像:
 
 ```bash
-docker run -v $(pwd)/embykeeper:/app --rm -it --net=host embykeeper/embykeeper -i
+git clone https://github.com/emby-keeper/emby-keeper.git
+cd emby-keeper
+docker build -t embykeeper-local .
+docker run -d --name embykeeper -p 1818:1818 -v /opt/embykeeper-data:/app embykeeper-local
 ```
 
 **注意**: 由于近期 Telegram 风控等级上升, 请尽可能先使用服务器所在地区的代理在手机上先登陆一次, 再使用 Embykeeper.
-
-您也可以使用 [Docker Compose 部署](https://emby-keeper.github.io/guide/Linux-Docker-Compose-部署).
 
 更多安装和配置方面的帮助请参考 [**📖 教程文档**](https://emby-keeper.github.io/).
 
