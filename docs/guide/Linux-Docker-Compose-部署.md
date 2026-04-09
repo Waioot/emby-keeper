@@ -198,7 +198,7 @@ docker-compose up -d
 
 您可以直接修改 `./embykeeper-src` 中的源码, 重启容器后程序将据此运行.
 
-例如, 只要您有基本的编程能力, 您就可以在 `./embykeeper-src/embykeeper/telechecker/bots` 中按照 [教程](/guide/参与开发#每日签到站点) 提供的方式非常容易地新建一个站点的签到.
+例如, 只要您有基本的编程能力, 您就可以在 `./embykeeper-src/embykeeper/telegram/checkiner` 中按照 [教程](/guide/参与开发#每日签到站点) 提供的方式非常容易地新建一个站点的签到.
 
 ::: tip 如何更新
 
@@ -208,38 +208,3 @@ docker-compose up -d
 
 欢迎您在实现签到器后, 通过 [Pull requests](https://github.com/emby-keeper/emby-keeper/pulls) 向 Embykeeper 分享你的成果.
 
-## 部署在线控制台
-
-当 `EK_WEBPASS` 环境变量被设定时, 将启动在线控制台, 默认的命令行将不会启动.
-
-::: warning 注意
-自部署不推荐使用在线控制台, 目前的在线控制台实际上是控制台的在线版, 并不提供高级美观直观的界面.
-之后, 我们会考虑在线界面的开发.
-:::
-
-::: warning 注意
-在自部署模式下, 配置文件不生效, 需要通过环境变量输入配置.
-:::
-
-请使用 `docker-compose.yml`:
-
-```yaml
-version: '3'
-services:
-  embykeeper:
-    container_name: embykeeper
-    image: embykeeper/embykeeper
-    restart: unless-stopped
-    environment:
-      - EK_WEBPASS=123456
-    ports:
-      - 80:1818
-```
-
-并运行:
-
-```bash
-docker-compose up -d
-```
-
-将在 80 端口启动在线控制台 HTTP 服务.

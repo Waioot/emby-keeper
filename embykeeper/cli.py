@@ -102,6 +102,20 @@ def print_help(ctx: typer.Context, param: typer.CallbackParam, value: bool):
     raise typer.Exit()
 
 
+def get_log_dir(basedir: Path | None = None) -> Path:
+    deploy_dir = None
+    try:
+        deploy_dir = Path.cwd().resolve()
+        primary = deploy_dir / "logs"
+        primary.mkdir(parents=True, exist_ok=True)
+        return primary
+    except Exception:
+        fallback_base = Path(basedir or user_data_dir(__product__)).resolve()
+        fallback = fallback_base / "logs"
+        fallback.mkdir(parents=True, exist_ok=True)
+        return fallback
+
+
 @app.async_command(
     help=(
         f"欢迎使用 [orange3]{__product__.capitalize()}[/] {__version__} " ":cinema: 无参数默认开启核心功能."
@@ -171,14 +185,14 @@ async def main(
         envvar="EK_INSTANT",
         show_envvar=False,
         rich_help_panel="调试参数",
-        help="启动时立刻执行一次任务",
+        help="启动时先立刻执行一次任务, 若未指定 --once 则随后继续进入计划执行模式",
     ),
     once: bool = typer.Option(
         False,
         "--once/--cron",
         "-o/-O",
         rich_help_panel="调试参数",
-        help="只执行一次而不进入计划执行模式",
+        help="只执行一次后退出, 不进入计划执行模式",
     ),
     verbosity: int = typer.Option(
         False,
@@ -319,7 +333,17 @@ async def main(
     else:
         level = "INFO"
 
-    initialize(level=level, show_path=verbosity and (not simple_log), show_time=not simple_log)
+    basedir = Path(basedir or user_data_dir(__product__))
+    basedir.mkdir(parents=True, exist_ok=True)
+    log_dir = get_log_dir(basedir)
+
+    initialize(
+        level=level,
+        log_dir=log_dir,
+        show_path=verbosity and (not simple_log),
+        show_time=not simple_log,
+    )
+    logger.info(f'日志目录: "{log_dir}"')
     if disable_color:
         var.console.no_color = True
 
@@ -329,8 +353,6 @@ async def main(
     logger.info(f"启动命令: {' '.join(shlex.quote(arg) for arg in sys.argv)}")
     logger.debug(f'命令行参数: "{" ".join(sys.argv[1:])}".')
 
-    basedir = Path(basedir or user_data_dir(__product__))
-    basedir.mkdir(parents=True, exist_ok=True)
     if public:
         logger.info(f'工作目录: "{basedir}"')
     else:
@@ -476,6 +498,10 @@ async def main(
 
         pool = AsyncTaskPool()
 
+        if (not once) or config.noexit:
+            from .notify import start_notifier
+
+            streams = await start_notifier()
         if instant and not debug_cron:
             if checkin_man:
                 pool.add(checkin_man.run_all(instant=True), "站点签到")
@@ -485,10 +511,6 @@ async def main(
                 pool.add(subsonic_man.run_all(instant=True), "Subsonic 保活")
             await pool.wait()
             logger.debug("启动时立刻执行签到和保活: 已完成.")
-        if (not once) or config.noexit:
-            from .notify import start_notifier
-
-            streams = await start_notifier()
         if not once:
             if checkin_man:
                 pool.add(checkin_man.schedule_all(), "站点签到")
@@ -514,6 +536,7 @@ async def main(
                     logger.debug(f"任务 {t.get_name()} 成功结束.")
         finally:
             if streams:
+                await logger.complete()
                 await asyncio.gather(*[stream.join() for stream in streams])
     finally:
         from .runinfo import RunContext

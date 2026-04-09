@@ -574,6 +574,9 @@ class Client(pyrogram.Client):
     async def handle_updates(self, updates):
         try:
             return await super().handle_updates(updates)
+        except (TimeoutError, asyncio.TimeoutError) as e:
+            logger.warning(f"Telegram 更新同步超时: {e}")
+            return
         except OSError as e:
             logger.warning(f"与 Telegram 服务器连接错误: {e}")
             raise

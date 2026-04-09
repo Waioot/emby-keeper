@@ -4,7 +4,8 @@ import inspect
 from logging import Formatter
 import asyncio
 import logging
-from typing import TYPE_CHECKING
+from pathlib import Path
+from typing import TYPE_CHECKING, Optional
 
 from loguru import logger
 from rich.logging import RichHandler
@@ -65,7 +66,12 @@ def formatter(record):
         return "{message}"
 
 
-def initialize(level="INFO", **kw):
+def _plain_formatter(record):
+    markup = formatter(record).format(**record)
+    return Text.from_markup(markup).plain
+
+
+def initialize(level="INFO", log_dir: Optional[Path] = None, **kw):
     """初始化日志配置."""
 
     from asyncio import constants
@@ -76,6 +82,18 @@ def initialize(level="INFO", **kw):
     )
     handler.setFormatter(Formatter(None, "[%m/%d %H:%M]"))
     logger.add(handler, format=formatter, level=level, colorize=False)
+
+    if log_dir:
+        log_dir = Path(log_dir)
+        log_dir.mkdir(parents=True, exist_ok=True)
+        logger.add(
+            log_dir / "{time:YYYY-MM-DD}.log",
+            format=lambda record: _plain_formatter(record) + "\n",
+            level=level,
+            encoding="utf-8",
+            rotation="00:00",
+            retention="30 days",
+        )
 
     constants.LOG_THRESHOLD_FOR_CONNLOST_WRITES = 1000000
 

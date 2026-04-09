@@ -69,7 +69,7 @@ class TemplateACheckin(BotCheckin):
             else self.bot_use_captcha
         )
 
-        self.log = logger.bind(scheme="telechecker", name=self.name, username=self.client.me.full_name)
+        self.log = logger.bind(scheme="telechecker", name=self.name, username=self.client.me.full_name, checkin_log=True)
         return True
 
     async def message_handler(self, client, message: Message):

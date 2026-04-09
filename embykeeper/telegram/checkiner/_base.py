@@ -105,7 +105,9 @@ class BaseBotCheckin(ABC):
 
         self.config = config
         self.finished = asyncio.Event()  # 签到完成事件
-        self.log = self.ctx.bind_logger(logger.bind(name=self.name, username=client.me.full_name))  # 日志组件
+        self.log = self.ctx.bind_logger(
+            logger.bind(name=self.name, username=client.me.full_name, checkin_log=True)
+        )  # 日志组件
 
         self._task = None  # 主任务
 

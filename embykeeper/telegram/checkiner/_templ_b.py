@@ -73,7 +73,7 @@ class TemplateBCheckin(BotCheckin):
         self.max_retries = self.t_config.max_retries
         self.checked_retries = self.t_config.checked_retries
 
-        self.log = logger.bind(scheme="telechecker", name=self.name, username=self.client.me.full_name)
+        self.log = logger.bind(scheme="telechecker", name=self.name, username=self.client.me.full_name, checkin_log=True)
         return True
 
     async def send_checkin(self, **kw):

@@ -78,7 +78,7 @@ async def start_notifier():
             return False
 
     def _formatter(record):
-        return "{level}#" + formatter(record)
+        return formatter(record)
 
     notifier = config.notifier
     if not notifier or not notifier.enabled:
@@ -175,6 +175,7 @@ async def debug_notifier():
             logger.info("已尝试发送, 请至 Apprise 配置的接收端查看.")
         elif method == "telegram_bot":
             logger.info("已尝试发送, 请至 Telegram Bot 配置的接收端查看.")
+        await logger.complete()
         await asyncio.gather(*[stream.join() for stream in streams if stream])
     else:
         logger.error("您当前没有配置有效的日志通知 (未启用日志通知或未配置 Telegram Bot / Apprise), 请检查配置文件.")

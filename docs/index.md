@@ -47,12 +47,6 @@ features:
       wrap: true
     title: Telegram 机器人每日签到
     details: 模拟在 Telegram 机器人每日签到, 已支持 50+ 站点.
-  - icon: 🎟️
-    title: 邀请码抢注
-    details: 时刻关注站点邀请码发放或开注信息, 第一时间自动注册. 同时支持考核辅助.
-  - icon: 🪐
-    title: 支持云部署
-    details: 支持 Huggingface 或 Render 免费云部署, 无需服务器, 支持网页管理.
   - icon: 🛡️
     title: 高稳定性
     details: 已持续开发改进 2 年, 签到和保号已尽可能与真人操作一致, 不容易被识别.
@@ -64,14 +58,9 @@ features:
 <script setup>
 
 import TerminalExampleSection from './components/TerminalExampleSection.vue'
-import WebExampleSection from './components/WebExampleSection.vue'
 
 </script>
 
 <hr style="margin-top: 30px; margin-bottom: 30px;">
 
 <TerminalExampleSection />
-
-<hr style="margin-top: 30px; margin-bottom: 30px;">
-
-<WebExampleSection />

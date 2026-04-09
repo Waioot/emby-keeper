@@ -371,7 +371,7 @@ def run(
         "-i/-I",
         envvar="EK_INSTANT",
         show_envvar=False,
-        help="启动时立刻执行一次任务",
+        help="启动时先立刻执行一次任务, 若未指定仅执行一次模式则随后继续计划执行",
     ),
     wait: bool = False,
     prefix: str = typer.Option("", envvar="EK_BASE_PREFIX", help="Base URL prefix (e.g. /ek)"),

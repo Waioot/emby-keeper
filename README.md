@@ -19,7 +19,7 @@ Embykeeper 是一个专注于 Emby 影视服务器签到保号的自动执行工
 
 2. **Emby 保号** - 通过模拟登录和播放视频, 定期保持 Emby 账号的活跃状态, 支持任何 Emby 站点.
 
-项目支持 Python 运行、Docker 部署或云部署, 且完全开源, 不存储任何密钥或隐私信息.
+项目支持 Python 运行与 Docker 部署, 且完全开源, 不存储任何密钥或隐私信息.
 
 验证码识别、视觉题、文本推断和日志推送都可以通过本地 OpenAI 兼容模型与您自己的 Telegram Bot 完成, 不依赖作者机器人.
 
@@ -35,13 +35,9 @@ Embykeeper 是一个专注于 Emby 影视服务器签到保号的自动执行工
 
 ## 安装与使用
 
-Embykeeper 支持 Docker 或 PyPI 安装 (Linux / Windows), 也支持云部署, 请点击下方按钮开始部署:
+Embykeeper 支持 Docker 或 PyPI 安装 (Linux / Windows), 请点击下方按钮查看安装指南:
 
 [![Setup Tutorial](https://github.com/emby-keeper/emby-keeper/raw/main/images/setup-button.svg)](https://emby-keeper.github.io/guide/安装指南)
-
-若您没有服务器, 您可以通过免费托管平台进行部署, 点击下方按钮开始部署:
-
-[![Deploy to Huggingface Space](https://github.com/emby-keeper/emby-keeper/raw/main/images/deploy-to-hf.svg)](https://huggingface.co/spaces/ekuser/ek?duplicate=true)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[![Tutorial](https://github.com/emby-keeper/emby-keeper/raw/main/images/hf-tutorial.svg)](https://blog.zetx.tech/2024/05/19/embykeeper-hf-tutorial/)
 
 若您有服务器, 我们推荐使用 [Docker 部署](https://emby-keeper.github.io/guide/Linux-Docker-部署):
 

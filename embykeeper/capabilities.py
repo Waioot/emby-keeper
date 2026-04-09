@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import Iterable
+from typing import Iterable, Tuple
 
 from embykeeper.notifier.telegram_bot import resolve_bot_token, resolve_chat_id
-from embykeeper.telegram.cf_turnstile import is_solver_available
+from embykeeper.telegram.cf_turnstile import get_solver_unavailable_reason, is_solver_available
 
 from .llm.profiles import resolve_profile
 
@@ -36,8 +36,16 @@ def check_capabilities(required_capabilities: Iterable[str], client_or_account=N
     return not missing, missing
 
 
+def describe_missing_capability(capability: str) -> Tuple[str, str | None]:
+    if capability == "cf.turnstile":
+        reason = get_solver_unavailable_reason()
+        return capability, reason
+    return capability, None
+
+
 def format_missing_capabilities(missing_capabilities: Iterable[str]):
-    missing = list(missing_capabilities or [])
-    if not missing:
-        return ""
-    return ", ".join(missing)
+    details = []
+    for capability in list(missing_capabilities or []):
+        name, reason = describe_missing_capability(capability)
+        details.append(f"{name} ({reason})" if reason else name)
+    return ", ".join(details)

@@ -18,7 +18,7 @@ from .dynamic import extract, get_cls, get_names
 from .session import ClientsSession
 from .pyrogram import Client
 
-logger = logger.bind(scheme="telechecker")
+logger = logger.bind(scheme="telechecker", checkin_log=True)
 
 
 class CheckinerManager:
@@ -309,7 +309,7 @@ class CheckinerManager:
                     config=config_to_use.get_site_config(site_name),
                 )
 
-                log = logger.bind(username=client.me.full_name, name=c.name)
+                log = logger.bind(username=client.me.full_name, name=c.name, checkin_log=True)
 
                 result = await c._start()
                 if result.status == RunStatus.SUCCESS:
@@ -327,7 +327,7 @@ class CheckinerManager:
         self, ctx: RunContext, account: TelegramAccount, client: Client, instant: bool = False
     ):
         """Run checkins for a single user"""
-        log = logger.bind(username=client.me.full_name)
+        log = logger.bind(username=client.me.full_name, checkin_log=True)
 
         # Get checkin classes based on account config or global config
         site = None
@@ -406,21 +406,25 @@ class CheckinerManager:
             else:
                 failed.append(c.name)
 
-        spec = f"共{len(successful) + len(checked) + len(failed) + len(ignored)}个"
-        if successful:
-            spec += f", {len(successful)}成功"
-        if checked:
-            spec += f", {len(checked)}已签到而跳过"
-        if failed:
-            spec += f", {len(failed)}失败"
-        if ignored:
-            spec += f", {len(ignored)}跳过"
+        total = len(successful) + len(checked) + len(failed) + len(ignored)
 
-        if failed:
-            msg = "签到部分失败" if successful else "签到失败"
-            log.bind(log=True).error(f"{msg} ({spec}): {', '.join(failed)}")
-        else:
-            log.bind(log=True).info(f"签到成功 ({spec}).")
+        def format_sites(label: str, sites: List[str]):
+            if not sites:
+                return None
+            return f"{label}：{', '.join(sites)}"
+
+        details = [f"📦 {total} 个"]
+        for section in (
+            format_sites("成功", successful),
+            format_sites("已签到", checked),
+            format_sites("失败", failed),
+            format_sites("跳过", ignored),
+        ):
+            if section:
+                details.append(section)
+
+        spec = "；".join(details)
+        log.bind(msg=True).info(f"✅ 每日签到完成（{spec}）")
 
     def new_ctx(self):
         now = datetime.now()

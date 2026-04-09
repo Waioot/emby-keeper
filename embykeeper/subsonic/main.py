@@ -74,9 +74,9 @@ class SubsonicManager:
                 logger.error(f"保活失败 ({fails}/{len(tasks)}): {', '.join(failed_accounts)}")
             return ctx.finish(RunStatus.FAIL, f"保活失败")
         if len(accounts) == 1:
-            logger.bind(log=True).info(f"保活成功: {', '.join(successful_accounts)}.")
+            logger.bind(msg=True).info(f"保活成功: {', '.join(successful_accounts)}.")
         else:
-            logger.bind(log=True).info(
+            logger.bind(msg=True).info(
                 f"保活成功 ({len(tasks)}/{len(tasks)}): {', '.join(successful_accounts)}."
             )
         return ctx.finish(RunStatus.SUCCESS, f"保活成功")
