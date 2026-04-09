@@ -110,6 +110,15 @@ async def build_signed_webview_url(client, raw_url: str) -> str:
     return result.url
 
 
+async def fetch_xigua_checkin_url_with_client(client, timeout: float = 15.0) -> str:
+    raw_url = await find_recent_raw_webapp_url(client)
+    if not raw_url:
+        raw_url = await wait_for_panel_after_start(client, timeout)
+    signed_url = await build_signed_webview_url(client, raw_url)
+    save_xigua_result(url=signed_url)
+    return signed_url
+
+
 async def fetch_xigua_checkin_url(config_file: str, phone: str | None = None, timeout: float = 15.0) -> str:
     if not await config.reload_conf(config_file):
         raise RuntimeError(f"加载配置失败: {config_file}")
@@ -122,12 +131,7 @@ async def fetch_xigua_checkin_url_from_config(phone: str | None = None, timeout:
 
     async with ClientsSession([account]) as clients:
         async for _, client in clients:
-            raw_url = await find_recent_raw_webapp_url(client)
-            if not raw_url:
-                raw_url = await wait_for_panel_after_start(client, timeout)
-            signed_url = await build_signed_webview_url(client, raw_url)
-            save_xigua_result(url=signed_url)
-            return signed_url
+            return await fetch_xigua_checkin_url_with_client(client, timeout=timeout)
 
     raise RuntimeError("Telegram 客户端初始化失败")
 

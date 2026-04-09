@@ -61,7 +61,7 @@
     <section class="py-5 mt-5">
       <div class="container">
         <div class="row">
-          <div class="col-10 mx-auto">
+          <div class="col-12 col-lg-6">
             <div
               class="d-inline-flex reccircle bg-light my-2 px-3 align-items-center"
             >
@@ -77,28 +77,24 @@
               </div>
             </div>
           </div>
-          <div
-            class="col d-flex d-lg-flex justify-content-end"
-            id="restart-btn"
-          >
-            <div class="bs-icon-circle bs-icon my-2 bg-light">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="1em"
-                height="1em"
-                fill="currentColor"
-                viewBox="0 0 16 16"
-                class="bi bi-arrow-repeat"
-                id="restart-icon"
-              >
-                <path
-                  d="M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1 .192-.41zm-11 2h3.932a.25.25 0 0 0 .192-.41L2.692 6.23a.25.25 0 0 0-.384 0L.342 8.59A.25.25 0 0 0 .534 9z"
-                ></path>
-                <path
-                  fill-rule="evenodd"
-                  d="M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 1 1-.771-.636A6.002 6.002 0 0 1 13.917 7H12.9A5.002 5.002 0 0 0 8 3zM3.1 9a5.002 5.002 0 0 0 8.757 2.182.5.5 0 1 1 .771.636A6.002 6.002 0 0 1 2.083 9H3.1z"
-                ></path>
-              </svg>
+          <div class="col-12 col-lg-6 d-flex justify-content-lg-end align-items-center gap-2 my-2">
+            <button class="btn btn-primary shadow btn-minor" id="run-once-btn">执行一次</button>
+            <button class="btn btn-primary shadow btn-minor" id="schedule-start-btn">开启定时</button>
+            <button class="btn btn-outline-secondary shadow btn-minor" id="schedule-stop-btn">停止任务</button>
+          </div>
+        </div>
+        <div class="row mb-3">
+          <div class="col">
+            <div class="card" style="border-radius: 5px">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start gap-3 flex-column flex-lg-row">
+                  <div>
+                    <p class="mb-1 text-muted">最新西瓜链接</p>
+                    <code id="xigua-url">还没有生成过西瓜签到链接</code>
+                  </div>
+                  <button class="btn btn-outline-primary btn-minor" id="xigua-copy-btn">复制链接</button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -215,6 +211,7 @@
     </footer>
     <script src="assets/bootstrap/js/bootstrap.min.js"></script>
     <script src="assets/js/script.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.7.2/dist/axios.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/lib/addon-fit.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-search@0.15.0/lib/addon-search.min.js"></script>

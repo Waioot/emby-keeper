@@ -10,6 +10,7 @@ from loguru import logger
 from embykeeper.schedule import Scheduler
 from embykeeper.schema import TelegramAccount
 from embykeeper.config import config
+from embykeeper import var
 from embykeeper.runinfo import RunContext, RunStatus
 from embykeeper.utils import AsyncTaskPool, show_exception
 
@@ -323,6 +324,21 @@ class CheckinerManager:
                 else:
                     log.debug("站点重新签到失败.")
 
+    async def _refresh_xigua_url_if_needed(self, account: TelegramAccount, client: Client, log):
+        if account.phone not in var.xigua_url_phone_numbers:
+            return
+
+        from embykeeper.xigua_result import save_xigua_result
+        from embykeeper.xigua_url_cli import fetch_xigua_checkin_url_with_client
+
+        try:
+            await fetch_xigua_checkin_url_with_client(client)
+        except Exception as e:
+            log.warning(f"西瓜签到链接提取失败: {e}")
+            save_xigua_result(error=str(e))
+        else:
+            log.info("已刷新西瓜签到链接。")
+
     async def _run_account(
         self, ctx: RunContext, account: TelegramAccount, client: Client, instant: bool = False
     ):
@@ -343,6 +359,7 @@ class CheckinerManager:
         if not clses:
             if site is not None:  # Only show warning if sites were specified but none were valid
                 log.warning("没有任何有效签到站点, 签到将跳过.")
+            await self._refresh_xigua_url_if_needed(account, client, log)
             return
 
         config_to_use = account.checkiner_config or config.checkiner
@@ -425,6 +442,7 @@ class CheckinerManager:
 
         spec = "；".join(details)
         log.bind(msg=True).info(f"✅ 每日签到完成（{spec}）")
+        await self._refresh_xigua_url_if_needed(account, client, log)
 
     def new_ctx(self):
         now = datetime.now()

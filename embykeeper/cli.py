@@ -14,6 +14,7 @@ from appdirs import user_data_dir
 from . import var, __author__, __name__ as __product__, __url__, __version__
 from .utils import AsyncTaskPool, show_exception
 from .config import config
+from .xigua_support import get_xigua_enabled_phones
 
 
 class AsyncTyper(typer.Typer):
@@ -103,17 +104,10 @@ def print_help(ctx: typer.Context, param: typer.CallbackParam, value: bool):
 
 
 def get_log_dir(basedir: Path | None = None) -> Path:
-    deploy_dir = None
-    try:
-        deploy_dir = Path.cwd().resolve()
-        primary = deploy_dir / "logs"
-        primary.mkdir(parents=True, exist_ok=True)
-        return primary
-    except Exception:
-        fallback_base = Path(basedir or user_data_dir(__product__)).resolve()
-        fallback = fallback_base / "logs"
-        fallback.mkdir(parents=True, exist_ok=True)
-        return fallback
+    target_base = Path(basedir or user_data_dir(__product__)).resolve()
+    log_dir = target_base / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    return log_dir
 
 
 def _exclude_xigua_site_names(site_names):
@@ -145,6 +139,8 @@ def _exclude_xigua_site_names(site_names):
 
 def _prepare_xigua_url_mode():
     from .schema import SiteConfig
+
+    var.xigua_url_phone_numbers = get_xigua_enabled_phones(config)
 
     if config.site is None:
         config.site = SiteConfig(checkiner=["all", "-xigua"])
@@ -443,6 +439,7 @@ async def main(
         logger.warning("您当前处于计划任务调试模式, 将在 10 秒后运行计划任务.")
     config.noexit = noexit
 
+    var.xigua_url_phone_numbers = set()
     if xigua_url:
         _prepare_xigua_url_mode()
         logger.info("已启用西瓜签到链接提取模式，普通签到阶段将跳过西瓜站点。")

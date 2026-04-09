@@ -9,3 +9,4 @@ subsonic_used = Event()
 exit_handlers = []
 use_mongodb_config = False
 telegram_test_server = False
+xigua_url_phone_numbers = set()
