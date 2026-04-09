@@ -28,10 +28,17 @@ docker run -d \
   --restart unless-stopped \
   -p 1818:1818 \
   -e TZ=Asia/Shanghai \
-  -e EK_WEBPASS='请改成你自己的网页登录密码' \
   -e EK_XIGUA_API_TOKEN='请改成你自己的接口密钥' \
   -v /opt/embykeeper-deploy:/app \
   embykeeper/embykeeper
+```
+
+默认网页登录密码是 `embykeeper`。
+
+如果你要改密码，就额外加上：
+
+```bash
+-e EK_WEBPASS='你自己的新密码'
 ```
 
 ## 打开网页
@@ -75,7 +82,6 @@ docker run -d \
   --restart unless-stopped \
   -p 1818:1818 \
   -e TZ=Asia/Shanghai \
-  -e EK_WEBPASS='请改成你自己的网页登录密码' \
   -e EK_XIGUA_API_TOKEN='请改成你自己的接口密钥' \
   -v /opt/embykeeper-deploy:/app \
   embykeeper/embykeeper

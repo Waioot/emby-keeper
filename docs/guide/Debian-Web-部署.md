@@ -35,7 +35,26 @@ mkdir -p /opt/embykeeper-deploy && docker rm -f embykeeper >/dev/null 2>&1 || tr
   --restart unless-stopped \
   -p 1818:1818 \
   -e TZ=Asia/Shanghai \
-  -e EK_WEBPASS='请改成你自己的网页登录密码' \
+  -e EK_XIGUA_API_TOKEN='请改成你自己的接口密钥' \
+  -v /opt/embykeeper-deploy:/app \
+  embykeeper/embykeeper
+```
+
+默认网页登录密码是：
+
+```text
+embykeeper
+```
+
+如果你要改密码，就把命令改成这样：
+
+```bash
+mkdir -p /opt/embykeeper-deploy && docker rm -f embykeeper >/dev/null 2>&1 || true && docker run -d \
+  --name embykeeper \
+  --restart unless-stopped \
+  -p 1818:1818 \
+  -e TZ=Asia/Shanghai \
+  -e EK_WEBPASS='你自己的新密码' \
   -e EK_XIGUA_API_TOKEN='请改成你自己的接口密钥' \
   -v /opt/embykeeper-deploy:/app \
   embykeeper/embykeeper
@@ -60,6 +79,7 @@ http://你的服务器IP:1818
 ```
 
 登录密码就是刚才写进 `EK_WEBPASS` 的值。
+如果你没有自己改，那就是 `embykeeper`。
 
 ## 保存配置
 
@@ -143,7 +163,6 @@ docker run -d \
   --restart unless-stopped \
   -p 1818:1818 \
   -e TZ=Asia/Shanghai \
-  -e EK_WEBPASS='请改成你自己的网页登录密码' \
   -e EK_XIGUA_API_TOKEN='请改成你自己的接口密钥' \
   -v /opt/embykeeper-deploy:/app \
   embykeeper/embykeeper
