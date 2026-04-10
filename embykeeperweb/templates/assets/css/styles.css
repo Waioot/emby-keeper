@@ -65,6 +65,29 @@
   color: black;
   border-style: none;
 }
+
+.xigua-card-layout {
+  width: 100%;
+}
+
+.xigua-content {
+  min-width: 0;
+  flex: 1 1 0;
+}
+
+.xigua-url-text {
+  display: block;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.7;
+}
+
+.xigua-copy-btn {
+  flex-shrink: 0;
+}
+
 .cursor-pointer {
   cursor: pointer;
 }

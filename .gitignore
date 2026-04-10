@@ -6,6 +6,7 @@
 *.toml
 !/config.example.toml
 !/pyproject.toml
+embykeeper-deploy/
 *.session
 *.session-journal
 *.msgs.yaml

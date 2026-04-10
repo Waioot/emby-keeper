@@ -18,7 +18,7 @@
 ```bash
 mkdir -p /opt/embykeeper
 cd /opt/embykeeper
-git clone https://github.com/emby-keeper/emby-keeper.git
+git clone -b dev-terminal https://github.com/Waioot/emby-keeper.git
 cd emby-keeper
 ```
 

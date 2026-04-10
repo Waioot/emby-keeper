@@ -133,12 +133,17 @@ def test_runtime_state_helpers_persist_to_runtime_json(tmp_path):
     assert (tmp_path / "runtime.json").exists()
 
 
-def test_xigua_api_requires_token_when_configured(tmp_path, monkeypatch):
+def test_xigua_api_allows_logged_in_web_user_when_token_configured(tmp_path, monkeypatch):
     monkeypatch.setenv("EK_XIGUA_API_TOKEN", "demo-token")
     client = configure_test_app(tmp_path)
 
     unauthorized = client.get("/api/xigua/latest")
     assert unauthorized.status_code == 401
+
+    login(client)
+    authenticated = client.get("/api/xigua/latest")
+    assert authenticated.status_code == 200
+    assert authenticated.get_json()["ok"] is False
 
     authorized = client.get("/api/xigua/latest?token=demo-token")
     assert authorized.status_code == 200

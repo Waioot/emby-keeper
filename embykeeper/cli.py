@@ -110,6 +110,27 @@ def get_log_dir(basedir: Path | None = None) -> Path:
     return log_dir
 
 
+def should_start_notifier(
+    once: bool,
+    *,
+    noexit: bool | None = None,
+    notifier_enabled: bool | None = None,
+    notifier_once: bool | None = None,
+) -> bool:
+    if noexit is None:
+        noexit = bool(getattr(config, "noexit", False))
+
+    notifier = None
+    if notifier_enabled is None or notifier_once is None:
+        notifier = getattr(config, "notifier", None)
+    if notifier_enabled is None:
+        notifier_enabled = bool(getattr(notifier, "enabled", False))
+    if notifier_once is None:
+        notifier_once = bool(getattr(notifier, "once", False))
+
+    return (not once) or noexit or (once and notifier_enabled and notifier_once)
+
+
 def _exclude_xigua_site_names(site_names):
     if site_names is None:
         return None
@@ -556,7 +577,7 @@ async def main(
 
         pool = AsyncTaskPool()
 
-        if (not once) or config.noexit:
+        if should_start_notifier(once):
             from .notify import start_notifier
 
             streams = await start_notifier()

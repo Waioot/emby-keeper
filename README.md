@@ -42,7 +42,7 @@ Embykeeper 当前推荐使用本地构建 Docker 部署，请点击下方按钮�
 若您有服务器, 我们推荐直接在服务器克隆仓库后本地构建镜像:
 
 ```bash
-git clone https://github.com/emby-keeper/emby-keeper.git
+git clone -b dev-terminal https://github.com/Waioot/emby-keeper.git
 cd emby-keeper
 docker build -t embykeeper-local .
 docker run -d --name embykeeper -p 1818:1818 -v /opt/embykeeper-data:/app embykeeper-local

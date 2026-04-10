@@ -34,6 +34,7 @@ window.addEventListener('DOMContentLoaded', function() {
     const statusMsg = document.getElementById("status-msg");
     const statusIcon = document.getElementById("status-icon");
     const xiguaUrl = document.getElementById("xigua-url");
+    const xiguaCopyBtn = document.getElementById("xigua-copy-btn");
     const runOnceBtn = document.getElementById("run-once-btn");
     const scheduleStartBtn = document.getElementById("schedule-start-btn");
     const scheduleStopBtn = document.getElementById("schedule-stop-btn");
@@ -95,6 +96,14 @@ window.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function setCopyButtonText(text) {
+        xiguaCopyBtn.textContent = text;
+        window.clearTimeout(xiguaCopyBtn._resetTimer);
+        xiguaCopyBtn._resetTimer = window.setTimeout(function() {
+            xiguaCopyBtn.textContent = '复制链接';
+        }, 1200);
+    }
+
     function refreshStatus() {
         axios.get(basePrefix + '/api/runtime/status')
             .then(function(response) {
@@ -147,8 +156,19 @@ window.addEventListener('DOMContentLoaded', function() {
         triggerRuntime('/api/runtime/schedule/stop');
     });
 
-    document.getElementById("xigua-copy-btn").addEventListener('click', function() {
-        navigator.clipboard.writeText(xiguaUrl.textContent || '');
+    xiguaCopyBtn.addEventListener('click', function() {
+        const value = (xiguaUrl.textContent || '').trim();
+        if (!value || !value.startsWith('http')) {
+            setCopyButtonText('暂无链接');
+            return;
+        }
+        navigator.clipboard.writeText(value)
+            .then(function() {
+                setCopyButtonText('已复制');
+            })
+            .catch(function() {
+                setCopyButtonText('复制失败');
+            });
     });
 
     socket.on("connect_error", (error) => {

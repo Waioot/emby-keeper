@@ -356,9 +356,12 @@ def is_authenticated():
 
 
 def is_xigua_api_authenticated():
+    if is_authenticated():
+        return True
+
     token = os.environ.get("EK_XIGUA_API_TOKEN", "").strip()
     if not token:
-        return is_authenticated()
+        return False
     request_token = request.headers.get("X-Xigua-Api-Token", "").strip() or request.args.get("token", "").strip()
     return request_token == token
 
