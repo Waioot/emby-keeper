@@ -45,7 +45,7 @@ Embykeeper 当前推荐使用本地构建 Docker 部署，请点击下方按钮�
 git clone -b dev-terminal https://github.com/Waioot/emby-keeper.git
 cd emby-keeper
 docker build -t embykeeper-local .
-docker run -d --name embykeeper -p 1818:1818 -v /opt/embykeeper-data:/app embykeeper-local
+docker run -d --name embykeeper -p 1818:1818 -v /root/embykeeper-data:/app embykeeper-local
 ```
 
 **注意**: 由于近期 Telegram 风控等级上升, 请尽可能先使用服务器所在地区的代理在手机上先登陆一次, 再使用 Embykeeper.

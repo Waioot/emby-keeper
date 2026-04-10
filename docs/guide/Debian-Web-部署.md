@@ -28,8 +28,8 @@ sudo systemctl enable --now docker
 执行下面这组命令：
 
 ```bash
-mkdir -p /opt/embykeeper
-cd /opt/embykeeper
+mkdir -p /root/embykeeper
+cd /root/embykeeper
 git clone -b dev-terminal https://github.com/Waioot/emby-keeper.git
 cd emby-keeper
 ```
@@ -53,7 +53,7 @@ embykeeper-local
 先准备数据目录：
 
 ```bash
-mkdir -p /opt/embykeeper-data
+mkdir -p /root/embykeeper-data
 ```
 
 再启动容器：
@@ -67,7 +67,7 @@ docker run -d \
   -p 1818:1818 \
   -e TZ=Asia/Shanghai \
   -e EK_XIGUA_API_TOKEN='请改成你自己的接口密钥' \
-  -v /opt/embykeeper-data:/app \
+  -v /root/embykeeper-data:/app \
   embykeeper-local
 ```
 
@@ -89,14 +89,14 @@ docker run -d \
   -e TZ=Asia/Shanghai \
   -e EK_WEBPASS='你自己的新密码' \
   -e EK_XIGUA_API_TOKEN='请改成你自己的接口密钥' \
-  -v /opt/embykeeper-data:/app \
+  -v /root/embykeeper-data:/app \
   embykeeper-local
 ```
 
 数据会放在这里：
 
 ```text
-/opt/embykeeper-data/
+/root/embykeeper-data/
 ├── config.toml
 ├── logs/
 ├── runtime.json
@@ -128,7 +128,7 @@ embykeeper
 点“保存配置”后，网页会直接写这个文件：
 
 ```text
-/opt/embykeeper-data/config.toml
+/root/embykeeper-data/config.toml
 ```
 
 ## 执行一次
@@ -183,7 +183,7 @@ docker logs -f embykeeper
 看西瓜最新结果：
 
 ```bash
-cat /opt/embykeeper-data/xigua/latest.json
+cat /root/embykeeper-data/xigua/latest.json
 ```
 
 ## 升级
@@ -191,7 +191,7 @@ cat /opt/embykeeper-data/xigua/latest.json
 先更新仓库，再重新构建，再重启容器。
 
 ```bash
-cd /opt/embykeeper/emby-keeper
+cd /root/embykeeper/emby-keeper
 git pull
 docker build -t embykeeper-local .
 docker rm -f embykeeper
@@ -202,6 +202,6 @@ docker run -d \
   -p 1818:1818 \
   -e TZ=Asia/Shanghai \
   -e EK_XIGUA_API_TOKEN='请改成你自己的接口密钥' \
-  -v /opt/embykeeper-data:/app \
+  -v /root/embykeeper-data:/app \
   embykeeper-local
 ```

@@ -16,8 +16,8 @@
 ## 克隆仓库
 
 ```bash
-mkdir -p /opt/embykeeper
-cd /opt/embykeeper
+mkdir -p /root/embykeeper
+cd /root/embykeeper
 git clone -b dev-terminal https://github.com/Waioot/emby-keeper.git
 cd emby-keeper
 ```
@@ -31,7 +31,7 @@ docker build -t embykeeper-local .
 ## 启动容器
 
 ```bash
-mkdir -p /opt/embykeeper-data
+mkdir -p /root/embykeeper-data
 docker rm -f embykeeper >/dev/null 2>&1 || true
 
 docker run -d \
@@ -40,7 +40,7 @@ docker run -d \
   -p 1818:1818 \
   -e TZ=Asia/Shanghai \
   -e EK_XIGUA_API_TOKEN='请改成你自己的接口密钥' \
-  -v /opt/embykeeper-data:/app \
+  -v /root/embykeeper-data:/app \
   embykeeper-local
 ```
 
@@ -83,7 +83,7 @@ docker logs -f embykeeper
 ## 升级
 
 ```bash
-cd /opt/embykeeper/emby-keeper
+cd /root/embykeeper/emby-keeper
 git pull
 docker build -t embykeeper-local .
 docker rm -f embykeeper
@@ -94,6 +94,6 @@ docker run -d \
   -p 1818:1818 \
   -e TZ=Asia/Shanghai \
   -e EK_XIGUA_API_TOKEN='请改成你自己的接口密钥' \
-  -v /opt/embykeeper-data:/app \
+  -v /root/embykeeper-data:/app \
   embykeeper-local
 ```
